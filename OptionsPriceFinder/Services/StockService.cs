@@ -1,24 +1,24 @@
 using OptionsPriceFinder.Models;
 
-namespace OptionsPriceFinder.Services
+namespace OptionsPriceFinder.Services;
+
+public interface IStockService
 {
-    public interface IStockService
+    Task<StockPrice> getCurrentPrice(string symbol);
+}
+
+public class StockService : IStockService
+{
+    private readonly PolygonApiClient polygonClient;
+
+    public StockService(PolygonApiClient polygonClient)
     {
-        Task<StockPrice> GetCurrentPriceAsync(string symbol);
+        this.polygonClient = polygonClient;
     }
 
-    public class StockService : IStockService
+    public async Task<StockPrice> getCurrentPrice(string symbol)
     {
-        // This will be implemented with Polygon.io API integration
-        public async Task<StockPrice> GetCurrentPriceAsync(string symbol)
-        {
-            // Placeholder implementation until API integration
-            return await Task.FromResult(new StockPrice
-            {
-                Symbol = symbol,
-                CurrentPrice = 0, // Will be populated from API
-                RetrievalTime = DateTime.UtcNow
-            });
-        }
+        return await polygonClient.GetCurrentStockPriceAsync(symbol);
     }
+
 }

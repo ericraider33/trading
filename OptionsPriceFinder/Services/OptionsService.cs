@@ -1,25 +1,37 @@
 using OptionsPriceFinder.Models;
 
-namespace OptionsPriceFinder.Services
+namespace OptionsPriceFinder.Services;
+
+public interface IOptionsService
 {
-    public interface IOptionsService
+    Task<OptionData> getCallOptionPrice(string symbol, DateTime expirationDate, decimal strikePrice);
+}
+
+public class OptionsService : IOptionsService
+{
+    private readonly PolygonApiClient polygonClient;
+
+    public OptionsService(PolygonApiClient polygonClient)
     {
-        Task<OptionData> GetCallOptionPriceAsync(string symbol, DateTime expirationDate, decimal strikePrice);
+        this.polygonClient = polygonClient;
     }
 
-    public class OptionsService : IOptionsService
+    public async Task<OptionData> getCallOptionPrice(string symbol, DateTime expirationDate, decimal strikePrice)
     {
-        // This will be implemented with Polygon.io API integration
-        public async Task<OptionData> GetCallOptionPriceAsync(string symbol, DateTime expirationDate, decimal strikePrice)
+        var options = await polygonClient.GetOptionsDataAsync(symbol, expirationDate, strikePrice);
+            
+        // Find the closest match to the target strike price
+        var closestOption = options
+            .OrderBy(o => Math.Abs(o.StrikePrice - strikePrice))
+            .FirstOrDefault();
+
+        return closestOption ?? new OptionData
         {
-            // Placeholder implementation until API integration
-            return await Task.FromResult(new OptionData
-            {
-                Symbol = symbol,
-                ExpirationDate = expirationDate,
-                StrikePrice = strikePrice,
-                CallPrice = null // Will be populated from API
-            });
-        }
+            Symbol = symbol,
+            ExpirationDate = expirationDate,
+            StrikePrice = strikePrice,
+            CallPrice = null
+        };
     }
+
 }

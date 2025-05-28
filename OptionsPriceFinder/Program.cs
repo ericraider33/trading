@@ -17,6 +17,7 @@ class Program
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false)
+                .AddJsonFile("appsettings.local.json", optional: true)
                 .Build();
 
             string apiKey = configuration["PolygonApiKey"];
@@ -71,50 +72,5 @@ class Program
             Console.WriteLine($"An error occurred: {ex.Message}");
             Console.WriteLine(ex.StackTrace);
         }
-    }
-}
-
-// Implementation of IStockService using PolygonApiClient
-public class StockService : IStockService
-{
-    private readonly PolygonApiClient _polygonClient;
-
-    public StockService(PolygonApiClient polygonClient)
-    {
-        _polygonClient = polygonClient;
-    }
-
-    public async Task<StockPrice> GetCurrentPriceAsync(string symbol)
-    {
-        return await _polygonClient.GetCurrentStockPriceAsync(symbol);
-    }
-}
-
-// Implementation of IOptionsService using PolygonApiClient
-public class OptionsService : IOptionsService
-{
-    private readonly PolygonApiClient _polygonClient;
-
-    public OptionsService(PolygonApiClient polygonClient)
-    {
-        _polygonClient = polygonClient;
-    }
-
-    public async Task<OptionData> GetCallOptionPriceAsync(string symbol, DateTime expirationDate, decimal strikePrice)
-    {
-        var options = await _polygonClient.GetOptionsDataAsync(symbol, expirationDate, strikePrice);
-            
-        // Find the closest match to the target strike price
-        var closestOption = options
-            .OrderBy(o => Math.Abs(o.StrikePrice - strikePrice))
-            .FirstOrDefault();
-
-        return closestOption ?? new OptionData
-        {
-            Symbol = symbol,
-            ExpirationDate = expirationDate,
-            StrikePrice = strikePrice,
-            CallPrice = null
-        };
     }
 }

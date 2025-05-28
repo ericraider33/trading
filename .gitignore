@@ -12,3 +12,4 @@ bin/
 obj/
 .out/
 /global.json
+appsettings.local.json
