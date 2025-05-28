@@ -66,17 +66,20 @@ namespace FidelityOptionsScraper
                 }
                 
                 // Initialize services
-                var stockScraper = new StockScraperService(browserService);
-                var optionsScraper = new OptionsScraperService(browserService);
-                var calculationService = new OptionsCalculationService(stockScraper, optionsScraper);
+                StockScraperService stockScraper = new StockScraperService(browserService);
+                OptionsScraperService optionsScraper = new OptionsScraperService(browserService);
+                OptionsCalculationService calculationService = new OptionsCalculationService(stockScraper, optionsScraper);
                 
                 Console.WriteLine($"\nProcessing symbols: {string.Join(", ", symbols)}");
                 
                 // Process each symbol
-                var results = new List<OptionResult>();
-                foreach (var symbol in symbols)
+                List<OptionResult> results = new ();
+                foreach (string symbol in symbols)
                 {
-                    var result = await calculationService.CalculateOptionsForSymbolAsync(symbol);
+                    OptionResult? result = await calculationService.calculateOptionsForSymbol(symbol);
+                    if (result == null)
+                        continue;
+                    
                     results.Add(result);
                 }
                 
