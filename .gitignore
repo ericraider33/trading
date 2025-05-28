@@ -1,0 +1,14 @@
+*~
+*.suo
+*.user
+*.userprefs
+.*.swp
+*.csproj.DotSettings
+.idea
+.vs
+.vscode
+output/
+bin/
+obj/
+.out/
+/global.json
