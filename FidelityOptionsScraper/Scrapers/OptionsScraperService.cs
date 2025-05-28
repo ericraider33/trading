@@ -34,8 +34,20 @@ public class OptionsScraperService
             await browserService.NavigateToAsync(url);
 
             // Wait for the options chain to load
-            await browserService.CurrentPage.WaitForSelectorAsync(".option-chain-table", new PageWaitForSelectorOptions { Timeout = 15000 });
+            await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 15000 });
 
+            IReadOnlyList<IElementHandle> optionsGroups = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-row-group");
+
+            IElementHandle? dateGrouping = await findDateGrouping(optionsGroups, expirationDate);
+            if (dateGrouping == null)
+            {
+                return results;
+            }
+            
+/*            
+            
+            
+            
             // Select the expiration date
             string formattedDate = expirationDate.ToString("MMM dd, yyyy");
                 
@@ -129,6 +141,7 @@ public class OptionsScraperService
                     });
                 }
             }
+            */
         }
         catch (Exception ex)
         {
@@ -146,7 +159,24 @@ public class OptionsScraperService
                 });
             }
         }
-
         return results;
+    }
+
+    private async Task<IElementHandle?> findDateGrouping(IReadOnlyList<IElementHandle> optionsGroups, DateTime dateToFind)
+    {
+        foreach (IElementHandle toCheck in optionsGroups)
+        {
+            IElementHandle? expirationDateElement = await toCheck.QuerySelectorAsync("span.expiration-date");
+            if (expirationDateElement == null)
+                continue;
+
+            string? contentText = await expirationDateElement.TextContentAsync();
+            if (contentText == null)
+                continue;
+            
+            Console.WriteLine(contentText);
+        }
+
+        return null;
     }
 }
