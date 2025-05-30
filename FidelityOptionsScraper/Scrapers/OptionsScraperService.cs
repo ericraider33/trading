@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices.JavaScript;
 using Microsoft.Playwright;
 using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
@@ -18,10 +19,8 @@ public class OptionsScraperService
     /// Gets call option prices for a given symbol, expiration date, and strike prices
     /// </summary>
     /// <param name="symbol">The stock symbol</param>
-    /// <param name="expirationDate">The option expiration date</param>
-    /// <param name="strikePrices">List of strike prices to find</param>
     /// <returns>List of OptionData objects with price information</returns>
-    public async Task<List<OptionData>?> getCallOptionPrices(string symbol, DateTime expirationDate)
+    public async Task<List<OptionData>?> getCallOptionPrices(string symbol)
     {
         if (browserService.CurrentPage == null)
             throw new InvalidOperationException("Browser not initialized");
@@ -38,19 +37,25 @@ public class OptionsScraperService
             await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 15000 });
 
             IReadOnlyList<IElementHandle> dateRowGroup = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-row-group");
-            int? rowIndex = await findDateGroupings(dateRowGroup, expirationDate);
-            Console.WriteLine($"DateGroupings rowIndex: {rowIndex}");
-            if (rowIndex == null)
-                return results;
+            List<(DateTime, int)> dateGroupings = await findDateGroupings(dateRowGroup);
+            Console.WriteLine($"DateGroupings count: {dateGroupings.Count}");
+            if (dateGroupings.Count == 0)
+                return null;
 
-            IReadOnlyList<IElementHandle> rowElements = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-center-cols-container .ag-row");
-            Console.WriteLine($"OptionsElements: {rowElements.Count}");
-            if (rowElements.Count == 0)
-                return results;
+            foreach ((DateTime expirationDate, int rowIndex) in dateGroupings)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"Fetching options for expiration date: {expirationDate.toIso8601Date()}");
+                
+                IReadOnlyList<IElementHandle> rowElements = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-center-cols-container .ag-row");
+                Console.WriteLine($"OptionsElements: {rowElements.Count}");
+                if (rowElements.Count == 0)
+                    continue;
 
-            List<OptionData> rows = await findOptionData(symbol, expirationDate, rowElements, rowIndex.Value);
-            Console.WriteLine($"Rows: {rows.Count}");
-            results.AddRange(rows);
+                List<OptionData> rows = await findOptionData(symbol, expirationDate, rowElements, rowIndex);
+                Console.WriteLine($"Rows: {rows.Count}");
+                results.AddRange(rows);
+            }
         }
         catch (Exception ex)
         {
@@ -58,13 +63,18 @@ public class OptionsScraperService
             return null;
         }
         
+        if (results.Count == 0)
+        {
+            Console.WriteLine($"No options data found for {symbol}");
+            return null;
+        }   
+        
         return results;
     }
 
-    private async Task<int?> findDateGroupings(IReadOnlyList<IElementHandle> optionsGroups, DateTime expirationDate)
+    private async Task<List<(DateTime, int)>> findDateGroupings(IReadOnlyList<IElementHandle> optionsGroups)
     {
-        string formattedDate = expirationDate.ToString("MMM dd, yyyy");
-        
+        List<(DateTime, int)> results = new();
         foreach (IElementHandle toCheck in optionsGroups)
         {
             IElementHandle? expirationDateElement = await toCheck.QuerySelectorAsync("span.expiration-date");
@@ -75,7 +85,8 @@ public class OptionsScraperService
             if (contentText == null)
                 continue;
 
-            if (!contentText.startsWithIgnoreCase(formattedDate))
+            DateTime? expirationDate = DateUtil.parseNullable("MMM dd, yyyy", contentText);
+            if (expirationDate == null)
                 continue;
 
             string? rowIndexText = await toCheck.GetAttributeAsync("row-index");
@@ -83,11 +94,13 @@ public class OptionsScraperService
                 continue;
             
             int? rowIndex = rowIndexText.parseIntNullable();
-            if (rowIndex != null)
-                return rowIndex;
+            if (rowIndex == null)
+                continue;
+            
+            results.Add((expirationDate.Value, rowIndex.Value));
         }
 
-        return null;
+        return results;
     }
 
     private async Task<List<OptionData>> findOptionData(string symbol, DateTime expirationDate, IEnumerable<IElementHandle> rows, int headerRowIndex)

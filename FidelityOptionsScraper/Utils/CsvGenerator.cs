@@ -1,35 +1,37 @@
-using System;
-using System.Collections.Generic;
 using System.Text;
+using AutoMapper;
 using FidelityOptionsScraper.Models;
+using pnyx.net.api;
+using pnyx.net.fluent;
 
-namespace FidelityOptionsScraper.Utils
+namespace FidelityOptionsScraper.Utils;
+
+public static class CsvGenerator
 {
-    public static class CsvGenerator
+    /// <summary>
+    /// Generates a CSV file from a list of options
+    /// </summary>
+    /// <param name="results">List of options</param>
+    /// <param name="outputPath">Path to save the CSV file</param>
+    public static void GenerateCsv(List<OptionData> options, string outputPath)
     {
-        /// <summary>
-        /// Generates a CSV file from a list of option results
-        /// </summary>
-        /// <param name="results">List of option results</param>
-        /// <param name="outputPath">Path to save the CSV file</param>
-        public static void GenerateCsv(List<OptionResult> results, string outputPath)
+        MapperConfiguration config = new MapperConfiguration(cfg =>
         {
-            StringBuilder csv = new StringBuilder();
-            
-            // Add header
-            csv.AppendLine("Symbol,CurrentPrice,FridayDate,CallOption1Percent,CallOption2Percent,CallOption3Percent");
-            
-            // Add data rows
-            foreach (var result in results)
-            {
-                csv.AppendLine($"{result.Symbol},{result.CurrentPrice},{result.FridayDate}," +
-                               $"{result.CallOption1Percent},{result.CallOption2Percent},{result.CallOption3Percent}");
-            }
-            
-            // Write to file
-            File.WriteAllText(outputPath, csv.ToString());
-            
-            Console.WriteLine($"CSV file saved to: {Path.GetFullPath(outputPath)}");
+        });
+
+        IObjectConverterFromNameValuePair converter = new AutoMapperObjectConverter<OptionData>
+        {
+            mapper = config.CreateMapper() 
+        };
+        
+        List<IDictionary<String, Object>> actual;
+        using (Pnyx p = new Pnyx())
+        {
+            p.objectToNameValuePair(converter);
+            p.writeCsv(outputPath);
         }
+        
+            
+        Console.WriteLine($"CSV file saved to: {Path.GetFullPath(outputPath)}");
     }
 }
