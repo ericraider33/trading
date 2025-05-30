@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Playwright" Version="1.52.0" />
+    <PackageReference Include="pnyx.net" Version="1.0.13" />
   </ItemGroup>
 
 </Project>

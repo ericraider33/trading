@@ -54,7 +54,7 @@ public class OptionsCalculationService
                 
             // Get options prices for each target price
             var targetPrices = new List<decimal> { price1Percent, price2Percent, price3Percent };
-            var optionsData = await optionsScraper.getCallOptionPrices(symbol, nextFriday, targetPrices);
+            var optionsData = await optionsScraper.getCallOptionPrices(symbol, nextFriday);
                 
             // Find the option prices for each target
             decimal? callOption1Percent = null;
@@ -63,17 +63,17 @@ public class OptionsCalculationService
                 
             foreach (var option in optionsData)
             {
-                if (Math.Abs(option.StrikePrice - price1Percent) < 0.01m)
+                if (Math.Abs(option.strikePrice - price1Percent) < 0.01m)
                 {
-                    callOption1Percent = option.CallPrice;
+                    callOption1Percent = option.callBidPrice;
                 }
-                else if (Math.Abs(option.StrikePrice - price2Percent) < 0.01m)
+                else if (Math.Abs(option.strikePrice - price2Percent) < 0.01m)
                 {
-                    callOption2Percent = option.CallPrice;
+                    callOption2Percent = option.callBidPrice;
                 }
-                else if (Math.Abs(option.StrikePrice - price3Percent) < 0.01m)
+                else if (Math.Abs(option.strikePrice - price3Percent) < 0.01m)
                 {
-                    callOption3Percent = option.CallPrice;
+                    callOption3Percent = option.callBidPrice;
                 }
             }
                 

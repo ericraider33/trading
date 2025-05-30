@@ -1,7 +1,8 @@
 using Microsoft.Playwright;
 using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
-
+using pnyx.net.util;
+    
 namespace FidelityOptionsScraper.Scrapers;
 
 public class OptionsScraperService
@@ -20,7 +21,7 @@ public class OptionsScraperService
     /// <param name="expirationDate">The option expiration date</param>
     /// <param name="strikePrices">List of strike prices to find</param>
     /// <returns>List of OptionData objects with price information</returns>
-    public async Task<List<OptionData>> getCallOptionPrices(string symbol, DateTime expirationDate, List<decimal> strikePrices)
+    public async Task<List<OptionData>?> getCallOptionPrices(string symbol, DateTime expirationDate)
     {
         if (browserService.CurrentPage == null)
             throw new InvalidOperationException("Browser not initialized");
@@ -36,134 +37,34 @@ public class OptionsScraperService
             // Wait for the options chain to load
             await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 15000 });
 
-            IReadOnlyList<IElementHandle> optionsGroups = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-row-group");
-
-            IElementHandle? dateGrouping = await findDateGrouping(optionsGroups, expirationDate);
-            if (dateGrouping == null)
-            {
+            IReadOnlyList<IElementHandle> dateRowGroup = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-row-group");
+            int? rowIndex = await findDateGroupings(dateRowGroup, expirationDate);
+            Console.WriteLine($"DateGroupings rowIndex: {rowIndex}");
+            if (rowIndex == null)
                 return results;
-            }
-            
-/*            
-            
-            
-            
-            // Select the expiration date
-            string formattedDate = expirationDate.ToString("MMM dd, yyyy");
-                
-            // Click on the expiration date dropdown
-            await browserService.CurrentPage.ClickAsync("select[data-id='expirationDate-dropdown']");
-                
-            // Find and select the closest expiration date
-            var expirationOptions = await browserService.CurrentPage.QuerySelectorAllAsync("select[data-id='expirationDate-dropdown'] option");
-                
-            bool foundExpiration = false;
-            foreach (var option in expirationOptions)
-            {
-                string dateText = await option.TextContentAsync() ?? "";
-                if (dateText.Contains(expirationDate.ToString("MMM")) && dateText.Contains(expirationDate.Day.ToString()))
-                {
-                    await option.ClickAsync();
-                    foundExpiration = true;
-                    break;
-                }
-            }
 
-            if (!foundExpiration)
-            {
-                // If exact date not found, select the closest available date
-                await expirationOptions[1].ClickAsync(); // Select first available date after current
-                string selectedDate = await browserService.CurrentPage.EvaluateAsync<string>("() => document.querySelector('select[data-id=\"expirationDate-dropdown\"]').value");
-                Console.WriteLine($"Exact expiration date not found. Using: {selectedDate}");
-            }
+            IReadOnlyList<IElementHandle> rowElements = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-center-cols-container .ag-row");
+            Console.WriteLine($"OptionsElements: {rowElements.Count}");
+            if (rowElements.Count == 0)
+                return results;
 
-            // Wait for the options chain to update
-            await browserService.CurrentPage.WaitForTimeoutAsync(1000);
-
-            // Process each strike price
-            foreach (var targetStrike in strikePrices)
-            {
-                // Find the closest strike price row
-                var optionRows = await browserService.CurrentPage.QuerySelectorAllAsync(".option-chain-table tbody tr");
-                    
-                IElementHandle? closestRow = null;
-                decimal closestDiff = decimal.MaxValue;
-                decimal actualStrike = 0;
-                    
-                foreach (var row in optionRows)
-                {
-                    var strikeElement = await row.QuerySelectorAsync("td.strike-price");
-                    if (strikeElement != null)
-                    {
-                        string strikeText = await strikeElement.TextContentAsync() ?? "0";
-                        strikeText = strikeText.Trim().Replace("$", "").Replace(",", "");
-                            
-                        if (decimal.TryParse(strikeText, out decimal strike))
-                        {
-                            decimal diff = Math.Abs(strike - targetStrike);
-                            if (diff < closestDiff)
-                            {
-                                closestDiff = diff;
-                                closestRow = row;
-                                actualStrike = strike;
-                            }
-                        }
-                    }
-                }
-
-                if (closestRow != null)
-                {
-                    // Extract the call option price
-                    var callPriceElement = await closestRow.QuerySelectorAsync("td.call-last-price");
-                    string callPriceText = await callPriceElement?.TextContentAsync() ?? "0";
-                    callPriceText = callPriceText.Trim().Replace("$", "").Replace(",", "");
-                        
-                    decimal callPrice = 0;
-                    decimal.TryParse(callPriceText, out callPrice);
-
-                    results.Add(new OptionData
-                    {
-                        Symbol = symbol,
-                        StrikePrice = actualStrike,
-                        ExpirationDate = expirationDate,
-                        CallPrice = callPrice
-                    });
-                }
-                else
-                {
-                    // If no matching row found, add a placeholder
-                    results.Add(new OptionData
-                    {
-                        Symbol = symbol,
-                        StrikePrice = targetStrike,
-                        ExpirationDate = expirationDate,
-                        CallPrice = null
-                    });
-                }
-            }
-            */
+            List<OptionData> rows = await findOptionData(symbol, expirationDate, rowElements, rowIndex.Value);
+            Console.WriteLine($"Rows: {rows.Count}");
+            results.AddRange(rows);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting options data for {symbol}: {ex.Message}");
-                
-            // Add placeholder results for all requested strike prices
-            foreach (var strike in strikePrices)
-            {
-                results.Add(new OptionData
-                {
-                    Symbol = symbol,
-                    StrikePrice = strike,
-                    ExpirationDate = expirationDate,
-                    CallPrice = null
-                });
-            }
+            return null;
         }
+        
         return results;
     }
 
-    private async Task<IElementHandle?> findDateGrouping(IReadOnlyList<IElementHandle> optionsGroups, DateTime dateToFind)
+    private async Task<int?> findDateGroupings(IReadOnlyList<IElementHandle> optionsGroups, DateTime expirationDate)
     {
+        string formattedDate = expirationDate.ToString("MMM dd, yyyy");
+        
         foreach (IElementHandle toCheck in optionsGroups)
         {
             IElementHandle? expirationDateElement = await toCheck.QuerySelectorAsync("span.expiration-date");
@@ -173,10 +74,79 @@ public class OptionsScraperService
             string? contentText = await expirationDateElement.TextContentAsync();
             if (contentText == null)
                 continue;
+
+            if (!contentText.startsWithIgnoreCase(formattedDate))
+                continue;
+
+            string? rowIndexText = await toCheck.GetAttributeAsync("row-index");
+            if (rowIndexText == null)
+                continue;
             
-            Console.WriteLine(contentText);
+            int? rowIndex = rowIndexText.parseIntNullable();
+            if (rowIndex != null)
+                return rowIndex;
         }
 
         return null;
+    }
+
+    private async Task<List<OptionData>> findOptionData(string symbol, DateTime expirationDate, IEnumerable<IElementHandle> rows, int headerRowIndex)
+    {
+        List<OptionData> results = new();
+        foreach (IElementHandle toCheck in rows)
+        {
+            string? rowIndexText = await toCheck.GetAttributeAsync("row-index");
+            if (rowIndexText == null)
+                continue;
+            
+            int? rowIndex = rowIndexText.parseIntNullable();
+            if (rowIndex == null)
+                continue;
+
+            // Filters to strictly the rows for specific date
+            if (rowIndex.Value <= headerRowIndex || rowIndex.Value > headerRowIndex + 20)
+                continue;
+            
+            IElementHandle? callLastElement = await toCheck.QuerySelectorAsync("""[col-id="callLast"]""");
+            IElementHandle? strikeElement = await toCheck.QuerySelectorAsync("""[col-id="strike"]""");
+            if (callLastElement == null || strikeElement == null)
+                continue;
+
+            OptionData row = new();
+            row.symbol = symbol;
+            row.strikePrice = await toDecimal(strikeElement);
+            row.expirationDate = expirationDate;
+            row.callLastPrice = await toDecimal(callLastElement);
+            
+            IElementHandle? callAskElement = await toCheck.QuerySelectorAsync("""[col-id="callAsk"]""");
+            if (callAskElement != null)
+                row.callAskPrice = await toDecimal(callAskElement, "Buy at ");
+            
+            IElementHandle? callBidElement = await toCheck.QuerySelectorAsync("""[col-id="callBid"]""");
+            if (callBidElement != null)
+                row.callBidPrice = await toDecimal(callBidElement, "Sell at ");
+
+            Console.WriteLine(row.ToString());
+            results.Add(row);
+        }
+        return results;
+    }
+    
+    private async Task<decimal> toDecimal(IElementHandle element, string? splitAt = null)
+    {
+        string? contentText = await element.TextContentAsync();
+        if (contentText == null)
+            throw new InvalidOperationException("Cannot extract text from element: " + element);
+
+        if (splitAt != null)
+        {
+            Tuple<string, string> parts = ParseExtensions.splitAt(contentText, splitAt);
+            if (parts == null)
+                throw new InvalidOperationException($"Could not split: {contentText} at {splitAt}");
+
+            contentText = parts.Item2;
+        }
+        
+        return decimal.Parse(contentText);
     }
 }
