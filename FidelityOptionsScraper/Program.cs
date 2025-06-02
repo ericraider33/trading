@@ -2,6 +2,7 @@ using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
 using FidelityOptionsScraper.Scrapers;
 using FidelityOptionsScraper.Utils;
+using trading.util;
 
 namespace FidelityOptionsScraper;
 
@@ -20,6 +21,7 @@ class Program
 
         // Output file path
         string outputPath = "options_prices.csv";
+        DirectoryUtil.changeToTradingDirectory();
             
         // Initialize browser service
         BrowserService browserService = new BrowserService();
@@ -80,7 +82,7 @@ class Program
             }
                 
             // Generate CSV output
-            CsvGenerator.GenerateCsv(results, outputPath);
+            CsvGenerator.writeCsv(results, outputPath);
                 
             Console.WriteLine("\nProcessing complete!");
         }

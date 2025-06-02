@@ -5,6 +5,7 @@ namespace FidelityOptionsScraper.Models;
 public class OptionData
 {
     public string symbol { get; set; } = null!;
+    public decimal sharePrice { get; set; }
     public decimal strikePrice { get; set; }
     public DateTime expirationDate { get; set; }
     public decimal callLastPrice { get; set; }

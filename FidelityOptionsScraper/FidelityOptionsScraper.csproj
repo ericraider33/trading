@@ -10,7 +10,11 @@
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
     <PackageReference Include="Microsoft.Playwright" Version="1.52.0" />
-    <PackageReference Include="pnyx.net" Version="1.0.13" />
+    <PackageReference Include="pnyx.net" Version="1.0.14" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TradingUtil\TradingUtil.csproj" />
   </ItemGroup>
 
 </Project>

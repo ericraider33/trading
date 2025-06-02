@@ -1,7 +1,7 @@
 using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Scrapers;
 
-namespace FidelityOptionsScraper;
+namespace FidelityOptionsScraper.Services;
 
 public class OptionsCalculationService
 {
@@ -36,7 +36,15 @@ public class OptionsCalculationService
                 return null;
             }
 
-            return await optionsScraper.getCallOptionPrices(symbol);
+            List<OptionData>? options = await optionsScraper.getCallOptionPrices(symbol);
+            if (options == null)
+                return null;
+
+            // Saves the current stock price to each option
+            foreach (OptionData option in options)
+                option.sharePrice = stockPrice.CurrentPrice;
+
+            return options;
         }
         catch (Exception ex)
         {

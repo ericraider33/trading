@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices.JavaScript;
 using Microsoft.Playwright;
 using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
@@ -84,7 +83,10 @@ public class OptionsScraperService
             string? contentText = await expirationDateElement.TextContentAsync();
             if (contentText == null)
                 continue;
-
+            
+            // Removes any formatting like "(Weekly)" or "(Monthly)"
+            contentText = contentText.splitAt("(").Item1.Trim();
+            
             DateTime? expirationDate = DateUtil.parseNullable("MMM dd, yyyy", contentText);
             if (expirationDate == null)
                 continue;
