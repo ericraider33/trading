@@ -5,12 +5,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" Version="14.0.0" />
     <PackageReference Include="Microsoft.Playwright" Version="1.52.0" />
-    <PackageReference Include="pnyx.net" Version="1.0.14" />
+    <PackageReference Include="pnyx.net" Version="1.0.15" />
   </ItemGroup>
 
   <ItemGroup>

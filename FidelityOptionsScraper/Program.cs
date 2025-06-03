@@ -2,6 +2,8 @@ using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
 using FidelityOptionsScraper.Scrapers;
 using FidelityOptionsScraper.Utils;
+using pnyx.net.api;
+using pnyx.net.fluent;
 using trading.util;
 
 namespace FidelityOptionsScraper;
@@ -12,11 +14,21 @@ class Program
     {
         Console.WriteLine("Fidelity Options Scraper - Starting...");
             
-        // Define test symbols (can be overridden by command line args)
-        string[] symbols = { "AAPL", "TSLA", "NFLX" };
-        if (args.Length > 0)
+        DirectoryUtil.changeToTradingDirectory();
+        List<string> symbols;
+        try
         {
-            symbols = args;
+            string inputFile = args.Length > 0 ? args[0] : "stocks.txt";
+            
+            using Pnyx p = new Pnyx();
+            p.read(inputFile);
+            p.hasLine();
+            symbols = p.processCaptureLines();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error reading list of stocks: {ex.Message}");
+            symbols = ["AAPL", "TSLA", "NFLX" ];
         }
 
         // Output file path

@@ -14,3 +14,4 @@ obj/
 /global.json
 appsettings.local.json
 options_prices.csv
+stocks.txt

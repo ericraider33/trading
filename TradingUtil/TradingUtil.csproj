@@ -5,10 +5,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>trading.util</RootNamespace>
+        <LangVersion>12</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="pnyx.net" Version="1.0.14" />
+      <PackageReference Include="pnyx.net" Version="1.0.15" />
     </ItemGroup>
 
 </Project>
