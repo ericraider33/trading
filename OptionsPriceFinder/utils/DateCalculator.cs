@@ -1,4 +1,4 @@
-namespace OptionsPriceFinder.Utils;
+namespace OptionsPriceFinder.utils;
 
 public static class DateCalculator
 {

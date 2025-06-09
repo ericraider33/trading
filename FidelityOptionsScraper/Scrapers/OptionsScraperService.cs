@@ -141,7 +141,6 @@ public class OptionsScraperService
             if (callBidElement != null)
                 row.callBidPrice = await toDecimal(callBidElement, "Sell at ");
 
-            Console.WriteLine(row.ToString());
             results.Add(row);
         }
         return results;

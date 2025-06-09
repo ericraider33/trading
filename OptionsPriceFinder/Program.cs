@@ -3,9 +3,11 @@ using FidelityOptionsScraper.Utils;
 using Microsoft.Extensions.Configuration;
 using OptionsPriceFinder.model;
 using OptionsPriceFinder.services;
+using OptionsPriceFinder.utils;
 using pnyx.net.util;
 using pnyx.net.util.dates;
 using trading.util;
+using DateCalculator = FidelityOptionsScraper.Utils.DateCalculator;
 
 namespace OptionsPriceFinder;
 
@@ -18,7 +20,7 @@ class Program
             Console.WriteLine("Options Price Finder - Starting...");
 
             // Load configuration
-            var configuration = new ConfigurationBuilder()
+            IConfigurationRoot configuration = new ConfigurationBuilder()
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false)
                 .AddJsonFile("appsettings.local.json", optional: true)
@@ -34,13 +36,16 @@ class Program
             OptionsCalculator calculator = new OptionsCalculator(100000m);
             
             HashSet<string> symbols = calculator.symbols(options);
+            List<OptionValues> optionValuesList = new List<OptionValues>();
             foreach (string symbol in symbols)
             {
                 OptionValues? values = calculator.calculateOption(symbol, friday.local, options);
                 if (values != null)
-                    Console.WriteLine(values);
+                    optionValuesList.Add(values);
             }
             
+            optionValuesList = optionValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
+            OptionValuesCsvGenerator.writeCsv(optionValuesList, "options_values.csv");
             Console.WriteLine("DONE");
         }
         catch (Exception ex)
