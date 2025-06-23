@@ -63,8 +63,7 @@ namespace FidelityOptionsScraper.Services
                 Console.WriteLine("2. Click 'Configure...' next to 'Discover network targets'");
                 Console.WriteLine("3. Add 'localhost:9222' and click 'Done'");
                 Console.WriteLine("4. Open a new Chrome window with the following command:");
-                Console.WriteLine("   chrome.exe --remote-debugging-port=9222");
-                Console.WriteLine("   (On Mac/Linux: google-chrome --remote-debugging-port=9222)");
+                Console.WriteLine("   chrome --remote-debugging-port=9222 --user-data-dir=C:\\dev\\trading\\ChromeUserData");
                 Console.WriteLine("5. Log in to Fidelity in this browser window");
                 Console.WriteLine("6. Once logged in, press Enter to continue...");
                 Console.ReadLine();
