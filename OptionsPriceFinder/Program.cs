@@ -4,10 +4,8 @@ using Microsoft.Extensions.Configuration;
 using OptionsPriceFinder.model;
 using OptionsPriceFinder.services;
 using OptionsPriceFinder.utils;
-using pnyx.net.util;
 using pnyx.net.util.dates;
 using trading.util;
-using DateCalculator = FidelityOptionsScraper.Utils.DateCalculator;
 
 namespace OptionsPriceFinder;
 
