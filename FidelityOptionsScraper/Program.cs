@@ -2,7 +2,6 @@ using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
 using FidelityOptionsScraper.Scrapers;
 using FidelityOptionsScraper.Utils;
-using pnyx.net.api;
 using pnyx.net.fluent;
 using trading.util;
 
@@ -80,12 +79,15 @@ class Program
             OptionsScraperService optionsScraper = new OptionsScraperService(browserService);
             OptionsCalculationService calculationService = new OptionsCalculationService(stockScraper, optionsScraper);
                 
-            Console.WriteLine($"\nProcessing symbols: {string.Join(", ", symbols)}");
+            Console.WriteLine($"\nProcessing {symbols.Count} symbols: {string.Join(", ", symbols)}");
                 
             // Process each symbol
             List<OptionData> results = new ();
+            int num = 0;
             foreach (string symbol in symbols)
             {
+                Console.WriteLine($"{++num} of {symbols.Count}]: Processing symbol: {symbol}");
+                
                 List<OptionData>? result = await calculationService.fetchOptionsForSymbol(symbol);
                 if (result == null)
                     continue;
