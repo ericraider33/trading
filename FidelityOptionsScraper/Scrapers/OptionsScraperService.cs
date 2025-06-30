@@ -60,7 +60,7 @@ public class OptionsScraperService
                 
                 // Adds pull/call ratio to each option
                 foreach (OptionData row in rows)
-                    row.pullCallRatio = pullCallRatio;
+                    row.putCallRatio = pullCallRatio;
             }
         }
         catch (Exception ex)

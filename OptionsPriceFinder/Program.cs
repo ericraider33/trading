@@ -31,6 +31,9 @@ class Program
 
             LocalTimestamp localTimestamp = LocalTimestamp.fromLocal(TimeZoneInfo.Local, DateTime.Now);
             LocalDay friday = DateCalculator.getNextFriday(localTimestamp.day);
+            
+//            friday = friday.addDays(-1);
+            
             OptionsCalculator calculator = new OptionsCalculator(100000m);
             
             HashSet<string> symbols = calculator.symbols(options);

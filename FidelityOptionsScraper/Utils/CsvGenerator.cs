@@ -16,7 +16,7 @@ public static class CsvGenerator
         nameof(OptionData.callLastPrice),
         nameof(OptionData.callBidPrice),
         nameof(OptionData.callAskPrice),
-        nameof(OptionData.pullCallRatio)
+        nameof(OptionData.putCallRatio)
     ];
 
     private static readonly IObjectConverterFromNameValuePair converter;

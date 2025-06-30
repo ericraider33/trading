@@ -16,10 +16,10 @@ public class OptionData
     /// Ratio of put options to call options, null if not available.
     /// Ratio below 1 is bullish, above 1 is bearish.
     /// </summary>
-    public decimal? pullCallRatio { get; set; }
+    public decimal? putCallRatio { get; set; }
 
     public override string ToString()
     {
-        return $"{symbol}, {expirationDate.toIso8601Date()}, {strikePrice} {callLastPrice:C}, {callBidPrice:C}, {callAskPrice:C}, {pullCallRatio:0.00}";
+        return $"{symbol}, {expirationDate.toIso8601Date()}, {strikePrice} {callLastPrice:C}, {callBidPrice:C}, {callAskPrice:C}, {putCallRatio:0.00}";
     }
 }

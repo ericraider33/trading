@@ -9,7 +9,6 @@ public static class DateCalculator
     /// </summary>
     public static LocalDay getNextFriday(LocalDay fromDate)
     {
-        
         // Calculate days until next Friday
         int daysUntilFriday = ((int)DayOfWeek.Friday - (int)fromDate.local.DayOfWeek + 7) % 7;
             
