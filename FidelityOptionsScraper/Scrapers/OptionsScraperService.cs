@@ -35,6 +35,9 @@ public class OptionsScraperService
             // Wait for the options chain to load
             await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 15000 });
 
+            // Get the pull/call ratio
+            decimal? pullCallRatio = await getPullCallRatio(symbol);
+            
             IReadOnlyList<IElementHandle> dateRowGroup = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-row-group");
             List<(DateTime, int)> dateGroupings = await findDateGroupings(dateRowGroup);
             Console.WriteLine($"DateGroupings count: {dateGroupings.Count}");
@@ -54,6 +57,10 @@ public class OptionsScraperService
                 List<OptionData> rows = await findOptionData(symbol, expirationDate, rowElements, rowIndex);
                 Console.WriteLine($"Rows: {rows.Count}");
                 results.AddRange(rows);
+                
+                // Adds pull/call ratio to each option
+                foreach (OptionData row in rows)
+                    row.pullCallRatio = pullCallRatio;
             }
         }
         catch (Exception ex)
@@ -69,6 +76,34 @@ public class OptionsScraperService
         }   
         
         return results;
+    }
+    
+    private async Task<decimal?> getPullCallRatio(string symbol)
+    {
+        if (browserService.CurrentPage == null)
+            throw new InvalidOperationException("Browser not initialized");
+
+        try
+        {
+            IElementHandle? pullCallRatioElement = await browserService.CurrentPage.QuerySelectorAsync(".ratio-value");
+            if (pullCallRatioElement == null)
+                return null;
+
+            string? contentText = await pullCallRatioElement.TextContentAsync();
+            if (contentText == null)
+                return null;
+
+            contentText = contentText.Trim().splitAt(" ").Item1;
+            if (String.IsNullOrEmpty(contentText))
+                return null;
+            
+            return decimal.Parse(contentText);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting pull/call ratio for {symbol}: {ex.Message}");
+            return null;
+        }
     }
 
     private async Task<List<(DateTime, int)>> findDateGroupings(IReadOnlyList<IElementHandle> optionsGroups)
