@@ -36,7 +36,7 @@ public class OptionsCalculationService
                 return null;
             }
 
-            List<OptionData>? options = await optionsScraper.getCallOptionPrices(symbol);
+            List<OptionData>? options = await optionsScraper.getCallAndPutOptionPrices(symbol);
             if (options == null)
                 return null;
 

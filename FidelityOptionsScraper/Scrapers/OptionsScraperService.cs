@@ -19,7 +19,7 @@ public class OptionsScraperService
     /// </summary>
     /// <param name="symbol">The stock symbol</param>
     /// <returns>List of OptionData objects with price information</returns>
-    public async Task<List<OptionData>?> getCallOptionPrices(string symbol)
+    public async Task<List<OptionData>?> getCallAndPutOptionPrices(string symbol)
     {
         if (browserService.CurrentPage == null)
             throw new InvalidOperationException("Browser not initialized");
@@ -35,8 +35,8 @@ public class OptionsScraperService
             // Wait for the options chain to load
             await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 15000 });
 
-            // Get the pull/call ratio
-            decimal? pullCallRatio = await getPullCallRatio(symbol);
+            // Get the put/call ratio
+            decimal? putCallRatio = await getPutCallRatio(symbol);
             
             IReadOnlyList<IElementHandle> dateRowGroup = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-row-group");
             List<(DateTime, int)> dateGroupings = await findDateGroupings(dateRowGroup);
@@ -58,9 +58,9 @@ public class OptionsScraperService
                 Console.WriteLine($"Rows: {rows.Count}");
                 results.AddRange(rows);
                 
-                // Adds pull/call ratio to each option
+                // Adds put/call ratio to each option
                 foreach (OptionData row in rows)
-                    row.putCallRatio = pullCallRatio;
+                    row.putCallRatio = putCallRatio;
             }
         }
         catch (Exception ex)
@@ -78,18 +78,18 @@ public class OptionsScraperService
         return results;
     }
     
-    private async Task<decimal?> getPullCallRatio(string symbol)
+    private async Task<decimal?> getPutCallRatio(string symbol)
     {
         if (browserService.CurrentPage == null)
             throw new InvalidOperationException("Browser not initialized");
 
         try
         {
-            IElementHandle? pullCallRatioElement = await browserService.CurrentPage.QuerySelectorAsync(".ratio-value");
-            if (pullCallRatioElement == null)
+            IElementHandle? putCallRatioElement = await browserService.CurrentPage.QuerySelectorAsync(".ratio-value");
+            if (putCallRatioElement == null)
                 return null;
 
-            string? contentText = await pullCallRatioElement.TextContentAsync();
+            string? contentText = await putCallRatioElement.TextContentAsync();
             if (contentText == null)
                 return null;
 
@@ -101,7 +101,7 @@ public class OptionsScraperService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting pull/call ratio for {symbol}: {ex.Message}");
+            Console.WriteLine($"Error getting put/call ratio for {symbol}: {ex.Message}");
             return null;
         }
     }
@@ -157,28 +157,63 @@ public class OptionsScraperService
             if (rowIndex.Value <= headerRowIndex || rowIndex.Value > headerRowIndex + 20)
                 continue;
             
-            IElementHandle? callLastElement = await toCheck.QuerySelectorAsync("""[col-id="callLast"]""");
-            IElementHandle? strikeElement = await toCheck.QuerySelectorAsync("""[col-id="strike"]""");
-            if (callLastElement == null || strikeElement == null)
-                continue;
 
             OptionData row = new();
             row.symbol = symbol;
-            row.strikePrice = await toDecimal(strikeElement);
             row.expirationDate = expirationDate;
-            row.callLastPrice = await toDecimal(callLastElement);
-            
-            IElementHandle? callAskElement = await toCheck.QuerySelectorAsync("""[col-id="callAsk"]""");
-            if (callAskElement != null)
-                row.callAskPrice = await toDecimal(callAskElement, "Buy at ");
-            
-            IElementHandle? callBidElement = await toCheck.QuerySelectorAsync("""[col-id="callBid"]""");
-            if (callBidElement != null)
-                row.callBidPrice = await toDecimal(callBidElement, "Sell at ");
+
+            IElementHandle? strikeElement = await toCheck.QuerySelectorAsync("""[col-id="strike"]""");
+            if (strikeElement == null)
+                continue;
+            row.strikePrice = await toDecimal(strikeElement);
+
+            if (!await populateCallOptionData(row, toCheck))
+                continue;
+
+            if (!await populatePutOptionData(row, toCheck))
+                continue;
 
             results.Add(row);
         }
         return results;
+    }
+    
+    private async Task<bool> populateCallOptionData(OptionData row, IElementHandle toCheck)
+    {
+        IElementHandle? callLastElement = await toCheck.QuerySelectorAsync("""[col-id="callLast"]""");
+        if (callLastElement == null)
+            return false;
+
+        row.callLastPrice = await toDecimal(callLastElement);
+            
+        IElementHandle? callAskElement = await toCheck.QuerySelectorAsync("""[col-id="callAsk"]""");
+        if (callAskElement != null)
+            row.callAskPrice = await toDecimal(callAskElement, "Buy at ");
+            
+        IElementHandle? callBidElement = await toCheck.QuerySelectorAsync("""[col-id="callBid"]""");
+        if (callBidElement != null)
+            row.callBidPrice = await toDecimal(callBidElement, "Sell at ");
+        
+        return true;
+    }
+    
+    private async Task<bool> populatePutOptionData(OptionData row, IElementHandle toCheck)
+    {
+        IElementHandle? putLastElement = await toCheck.QuerySelectorAsync("""[col-id="putLast"]""");
+        if (putLastElement == null)
+            return false;
+
+        row.putLastPrice = await toDecimal(putLastElement);
+            
+        IElementHandle? putAskElement = await toCheck.QuerySelectorAsync("""[col-id="putAsk"]""");
+        if (putAskElement != null)
+            row.putAskPrice = await toDecimal(putAskElement, "Buy at ");
+            
+        IElementHandle? putBidElement = await toCheck.QuerySelectorAsync("""[col-id="putBid"]""");
+        if (putBidElement != null)
+            row.putBidPrice = await toDecimal(putBidElement, "Sell at ");
+        
+        return true;
     }
     
     private async Task<decimal> toDecimal(IElementHandle element, string? splitAt = null)
