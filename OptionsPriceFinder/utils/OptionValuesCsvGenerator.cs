@@ -17,9 +17,9 @@ public class OptionValuesCsvGenerator
         nameof(OptionValues.strikePrice1),
         nameof(OptionValues.strikePrice2),
         nameof(OptionValues.strikePrice3),
-        nameof(OptionValues.callPrice1),
-        nameof(OptionValues.callPrice2),
-        nameof(OptionValues.callPrice3),
+        nameof(OptionValues.optionPrice1),
+        nameof(OptionValues.optionPrice2),
+        nameof(OptionValues.optionPrice3),
         nameof(OptionValues.incomePercent1),
         nameof(OptionValues.incomePercent2),
         nameof(OptionValues.incomePercent3)

@@ -30,23 +30,34 @@ class Program
             List<OptionData> options = CsvGenerator.readCsv(outputPath);
 
             LocalTimestamp localTimestamp = LocalTimestamp.fromLocal(TimeZoneInfo.Local, DateTime.Now);
-            LocalDay friday = DateCalculator.getNextFriday(localTimestamp.day);
+            LocalDay today = localTimestamp.day;
+            LocalDay friday = DateCalculator.getNextFriday(today);
             
 //            friday = friday.addDays(-1);
             
             OptionsCalculator calculator = new OptionsCalculator(100000m);
             
             HashSet<string> symbols = calculator.symbols(options);
-            List<OptionValues> optionValuesList = new List<OptionValues>();
+            List<OptionValues> callValuesList = new List<OptionValues>();
+            List<OptionValues> putValuesList = new List<OptionValues>();
             foreach (string symbol in symbols)
             {
-                OptionValues? values = calculator.calculateOption(symbol, friday.local, options);
-                if (values != null)
-                    optionValuesList.Add(values);
+                OptionValues? callValues = calculator.calculateCallOptions(symbol, friday.local, options);
+                if (callValues != null)
+                    callValuesList.Add(callValues);
+                
+                OptionValues? putValues = calculator.calculatePutOptions(symbol, friday.local, options);
+                if (putValues != null)
+                    putValuesList.Add(putValues);
             }
             
-            optionValuesList = optionValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
-            OptionValuesCsvGenerator.writeCsv(optionValuesList, "options_values.csv");
+            
+            callValuesList = callValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
+            OptionValuesCsvGenerator.writeCsv(callValuesList, $"call_values_{today.ToString()}.csv");
+            
+            putValuesList = putValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
+            OptionValuesCsvGenerator.writeCsv(putValuesList, $"put_values_{today.ToString()}.csv");
+            
             Console.WriteLine("DONE");
         }
         catch (Exception ex)

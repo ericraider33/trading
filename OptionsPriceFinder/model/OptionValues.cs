@@ -20,9 +20,9 @@ public class OptionValues
     public decimal? strikePrice2 { get; set; }
     public decimal? strikePrice3 { get; set; }
     
-    public decimal? callPrice1 { get; set;}
-    public decimal? callPrice2 { get; set; }
-    public decimal? callPrice3 { get; set; }
+    public decimal? optionPrice1 { get; set;}
+    public decimal? optionPrice2 { get; set; }
+    public decimal? optionPrice3 { get; set; }
     
     public decimal? incomePercent1 { get; set; }
     public decimal? incomePercent2 { get; set; }
