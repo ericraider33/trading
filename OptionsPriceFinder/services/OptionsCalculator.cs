@@ -114,9 +114,9 @@ public class OptionsCalculator
         values.strikePrice2 = option2?.strikePrice;
         values.strikePrice3 = option3?.strikePrice;
         
-        values.optionPrice1 = option1?.callLastPrice;
-        values.optionPrice2 = option2?.callLastPrice;
-        values.optionPrice3 = option3?.callLastPrice;
+        values.optionPrice1 = option1?.putLastPrice;
+        values.optionPrice2 = option2?.putLastPrice;
+        values.optionPrice3 = option3?.putLastPrice;
 
         values.incomePercent1 = percentIncome(values.optionPrice1, values.sharePrice);
         values.incomePercent2 = percentIncome(values.optionPrice2, values.sharePrice);
