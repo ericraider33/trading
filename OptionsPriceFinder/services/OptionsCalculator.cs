@@ -207,6 +207,7 @@ public class OptionsCalculator
         result.sharePrice = option.sharePrice;
         result.expirationDate = option.expirationDate;
         result.putCallRatio = option.putCallRatio;
+        result.beta = option.beta;
 
         result.options = (int)(investmentAmount / option.sharePrice / 100);
         result.shares = result.options * 100;

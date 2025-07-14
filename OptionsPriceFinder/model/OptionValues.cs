@@ -15,6 +15,11 @@ public class OptionValues
     /// Ratio below 1 is bullish, above 1 is bearish.
     /// </summary>
     public decimal? putCallRatio { get; set; }
+
+    /// <summary>
+    /// Beta value of the stock, null if not available.
+    /// </summary>
+    public decimal? beta { get; set; }
     
     public decimal? strikePrice1 { get; set; }
     public decimal? strikePrice2 { get; set; }

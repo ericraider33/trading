@@ -14,6 +14,7 @@ public class OptionValuesCsvGenerator
         nameof(OptionValues.sharePrice),
         nameof(OptionValues.expirationDate),
         nameof(OptionValues.putCallRatio),
+        nameof(OptionValues.beta),
         nameof(OptionValues.strikePrice1),
         nameof(OptionValues.strikePrice2),
         nameof(OptionValues.strikePrice3),
