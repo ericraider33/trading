@@ -23,6 +23,11 @@ public class OptionData
     /// </summary>
     public decimal? putCallRatio { get; set; }
 
+    /// <summary>
+    /// Beta value of the stock, null if not available.
+    /// </summary>
+    public decimal? beta { get; set; }
+
     public override string ToString()
     {
         return $"{symbol}, {expirationDate.toIso8601Date()}, {strikePrice} " +

@@ -42,7 +42,10 @@ public class OptionsCalculationService
 
             // Saves the current stock price to each option
             foreach (OptionData option in options)
+            {
                 option.sharePrice = stockPrice.CurrentPrice;
+                option.beta = stockPrice.beta;
+            }
 
             return options;
         }

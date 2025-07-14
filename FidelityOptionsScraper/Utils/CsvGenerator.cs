@@ -20,6 +20,7 @@ public static class CsvGenerator
         nameof(OptionData.putLastPrice),
         nameof(OptionData.putBidPrice),
         nameof(OptionData.putAskPrice),
+        nameof(OptionData.beta),
     ];
 
     private static readonly IObjectConverterFromNameValuePair converter;
