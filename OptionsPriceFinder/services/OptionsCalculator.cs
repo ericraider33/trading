@@ -215,4 +215,56 @@ public class OptionsCalculator
 
         return result;
     }
+    
+    public OptionSpread? calculatePutSpread(string symbol, DateTime expirationDate, List<OptionData> options)
+    {
+        // Limits to OTM put options (aka with strike price below share price)
+        List<OptionData> toReview = options
+            .Where(x => x.symbol == symbol && x.expirationDate == expirationDate && x.strikePrice < x.sharePrice)
+            .OrderByDescending(x => x.strikePrice)
+            .ToList();
+
+        if (toReview.Count < 2)
+            return null;
+
+        OptionValues values = calculateBasis(toReview[0]);
+        if (values.shares == 0)
+            return null;
+
+        OptionSpread spreadBase = OptionSpread.fromOptionValues(values);
+        List<OptionSpread> spreads = new();
+
+        for (int i = 0; i < toReview.Count - 1; i++)
+        {
+            OptionData optionSell = toReview[i];
+            for (int j = i + 1; j < toReview.Count; j++)
+            {
+                OptionSpread spread = spreadBase.cloneAs();
+                OptionData optionBuy = toReview[j];
+                
+                spread.strikePriceSell = optionSell.strikePrice;
+                spread.optionPriceSell = optionSell.getPutPriceBestGuess() ?? -1m;
+                spread.strikePriceBuy = optionBuy.strikePrice;
+                spread.optionPriceBuy = optionBuy.getPutPriceBestGuess() ?? -1m;
+                
+                if (spread.optionPriceSell <= 0 || spread.optionPriceBuy <= 0)
+                    continue;
+
+                spread.maximumGain = spread.optionPriceSell - spread.optionPriceBuy;
+                spread.maximumLoss = spread.strikePriceSell - spread.strikePriceBuy;
+                
+                if (spread.maximumLoss <= 0 || spread.maximumGain <= 0)
+                    continue;
+                
+                spread.maximumRatio = Math.Round(spread.maximumLoss / spread.maximumGain, 4, MidpointRounding.ToEven);
+                spreads.Add(spread);                
+            }
+        }
+
+        if (spreads.Count == 0)
+            return null;
+        
+        spreads = spreads.OrderBy(x => x.maximumRatio).ToList();
+        return spreads.FirstOrDefault();
+    }
 }

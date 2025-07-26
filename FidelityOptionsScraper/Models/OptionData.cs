@@ -35,4 +35,68 @@ public class OptionData
                $"{putLastPrice:C}, {putBidPrice:C}, {putAskPrice:C}, " +
                $"{putCallRatio:0.00}";
     }
+    
+    public decimal? putMidPointPrice
+    {
+        get
+        {
+            if (!putBidPrice.HasValue || !putAskPrice.HasValue) 
+                return null;
+            
+            if (putBidPrice.Value == 0 || putAskPrice.Value == 0)
+                return null;
+            
+            return (putBidPrice.Value + putAskPrice.Value) / 2;
+        }
+    }
+    
+    public decimal? callMidPointPrice
+    {
+        get
+        {
+            if (!callBidPrice.HasValue || !callAskPrice.HasValue) 
+                return null;
+            
+            return (callBidPrice.Value + callAskPrice.Value) / 2;
+        }
+    }
+    
+    public decimal? getPutPriceBestGuess()
+    {
+        // missing bid or ask price
+        if (!putBidPrice.HasValue || !putAskPrice.HasValue) 
+            return null;
+        
+        // missing bid or ask price
+        if (putBidPrice.Value == 0 || putAskPrice.Value == 0)
+            return null;
+
+        // nonsnse range, cannot calculate best guess
+        if (putBidPrice.Value >= putAskPrice.Value)
+            return null;                
+
+        // missing last price
+        if (putLastPrice == 0)
+            return null;
+
+        decimal midPoint = (putBidPrice.Value + putAskPrice.Value) / 2;
+        decimal weightedLow = putBidPrice.Value * 0.75m + putAskPrice.Value * 0.25m;
+        decimal weightedHigh = putBidPrice.Value * 0.25m + putAskPrice.Value * 0.75m;
+        
+        // Checks if the last price is well within the bid-ask range,
+        // in which case it is returned as the best guess.
+        if (putLastPrice >= weightedLow && putLastPrice <= weightedHigh)
+            return putLastPrice;
+        
+        if (putLastPrice > putBidPrice.Value && putLastPrice < weightedLow)
+            return putLastPrice;
+            
+        // If the last price is below the bid price, return a weighted average that favors the bid price.
+        if (putLastPrice <= putBidPrice.Value)
+            return putBidPrice.Value * 0.90m + putAskPrice.Value * 0.10m;
+        
+        // When higher, simply return midpoint so-as to avoid overestimating the price. 
+        return midPoint;
+    }
+ 
 }

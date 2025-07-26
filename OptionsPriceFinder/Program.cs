@@ -34,12 +34,14 @@ class Program
             LocalDay friday = DateCalculator.getNextFriday(today);
             
 //            friday = friday.addDays(-1);
+            friday = LocalDay.fromLocal(TimeZoneInfo.Local, new DateTime(2025, 7, 18));
             
             OptionsCalculator calculator = new OptionsCalculator(100000m);
             
             HashSet<string> symbols = calculator.symbols(options);
             List<OptionValues> callValuesList = new List<OptionValues>();
             List<OptionValues> putValuesList = new List<OptionValues>();
+            List<OptionSpread> putSpreadList = new List<OptionSpread>();
             foreach (string symbol in symbols)
             {
                 OptionValues? callValues = calculator.calculateCallOptions(symbol, friday.local, options);
@@ -49,14 +51,20 @@ class Program
                 OptionValues? putValues = calculator.calculatePutOptions(symbol, friday.local, options);
                 if (putValues != null)
                     putValuesList.Add(putValues);
+
+                OptionSpread? putSpread = calculator.calculatePutSpread(symbol, friday.local, options);
+                if (putSpread != null)
+                    putSpreadList.Add(putSpread);
             }
-            
             
             callValuesList = callValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
             OptionValuesCsvGenerator.writeCsv(callValuesList, $"call_values_{today.ToString()}.csv");
             
             putValuesList = putValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
             OptionValuesCsvGenerator.writeCsv(putValuesList, $"put_values_{today.ToString()}.csv");
+
+            putSpreadList = putSpreadList.OrderBy(o => o.maximumRatio).ToList();
+            OptionSpreadCsvGenerator.writeCsv(putSpreadList, $"put_spreads_{today.ToString()}.csv");
             
             Console.WriteLine("DONE");
         }
