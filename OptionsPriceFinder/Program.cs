@@ -34,7 +34,7 @@ class Program
             LocalDay friday = DateCalculator.getNextFriday(today);
             
 //            friday = friday.addDays(-1);
-            friday = LocalDay.fromLocal(TimeZoneInfo.Local, new DateTime(2025, 7, 18));
+//            friday = LocalDay.fromLocal(TimeZoneInfo.Local, new DateTime(2025, 7, 18));
             
             OptionsCalculator calculator = new OptionsCalculator(100000m);
             

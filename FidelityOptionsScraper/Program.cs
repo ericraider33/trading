@@ -26,8 +26,8 @@ class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error reading list of stocks: {ex.Message}");
-            symbols = ["AAPL", "TSLA", "NFLX" ];
+            await Console.Error.WriteLineAsync($"Error reading list of stocks: {ex.Message}");
+            symbols = ["AAPL", "NFLX"];
         }
 
         // Output file path

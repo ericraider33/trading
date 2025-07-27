@@ -51,7 +51,7 @@ public class OptionsCalculationService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error finding options for {symbol}: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error finding options for {symbol}: {ex.Message}");
             return null;
         }
     }

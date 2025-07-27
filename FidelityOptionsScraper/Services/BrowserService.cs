@@ -44,7 +44,7 @@ namespace FidelityOptionsScraper.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error initializing browser: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Error initializing browser: {ex.Message}");
                 return false;
             }
         }
@@ -94,8 +94,8 @@ namespace FidelityOptionsScraper.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error connecting to existing browser session: {ex.Message}");
-                Console.WriteLine("Please make sure Chrome is running with remote debugging enabled on port 9222.");
+                await Console.Error.WriteLineAsync($"Error connecting to existing browser session: {ex.Message}");
+                await Console.Error.WriteLineAsync("Please make sure Chrome is running with remote debugging enabled on port 9222.");
                 return false;
             }
         }
@@ -120,7 +120,7 @@ namespace FidelityOptionsScraper.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error navigating to {url}: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Error navigating to {url}: {ex.Message}");
                 return false;
             }
         }
@@ -179,7 +179,7 @@ namespace FidelityOptionsScraper.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error during login: {ex.Message}");
+                await Console.Error.WriteLineAsync($"Error during login: {ex.Message}");
                 return false;
             }
         }

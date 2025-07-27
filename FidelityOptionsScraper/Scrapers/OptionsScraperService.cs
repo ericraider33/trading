@@ -65,7 +65,7 @@ public class OptionsScraperService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting options data for {symbol}: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error getting options data for {symbol}: {ex.Message}");
             return null;
         }
         
@@ -101,7 +101,7 @@ public class OptionsScraperService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting put/call ratio for {symbol}: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error getting put/call ratio for {symbol}: {ex.Message}");
             return null;
         }
     }
@@ -194,6 +194,18 @@ public class OptionsScraperService
         if (callBidElement != null)
             row.callBidPrice = await toDecimal(callBidElement, "Sell at ");
         
+        IElementHandle? callOpenInterestElement = await toCheck.QuerySelectorAsync("""[col-id="callOpenInterest"]""");
+        if (callOpenInterestElement != null)
+            row.callOpenInterest = await toDecimal(callOpenInterestElement);
+
+        IElementHandle? callImpliedVolatilityElement = await toCheck.QuerySelectorAsync("""[col-id="callImpliedVolatility"]""");
+        if (callImpliedVolatilityElement != null)
+            row.callImpliedVolatility = await toDecimalPercentage(callImpliedVolatilityElement);
+
+        IElementHandle? callDeltaElement = await toCheck.QuerySelectorAsync("""[col-id="callDelta"]""");
+        if (callDeltaElement != null)
+            row.callDelta = await toDecimal(callDeltaElement);
+        
         return true;
     }
     
@@ -212,6 +224,18 @@ public class OptionsScraperService
         IElementHandle? putBidElement = await toCheck.QuerySelectorAsync("""[col-id="putBid"]""");
         if (putBidElement != null)
             row.putBidPrice = await toDecimal(putBidElement, "Sell at ");
+
+        IElementHandle? putOpenInterestElement = await toCheck.QuerySelectorAsync("""[col-id="putOpenInterest"]""");
+        if (putOpenInterestElement != null)
+            row.putOpenInterest = await toDecimal(putOpenInterestElement);
+
+        IElementHandle? putImpliedVolatilityElement = await toCheck.QuerySelectorAsync("""[col-id="putImpliedVolatility"]""");
+        if (putImpliedVolatilityElement != null)
+            row.putImpliedVolatility = await toDecimalPercentage(putImpliedVolatilityElement);
+
+        IElementHandle? putDeltaElement = await toCheck.QuerySelectorAsync("""[col-id="putDelta"]""");
+        if (putDeltaElement != null)
+            row.putDelta = await toDecimal(putDeltaElement);
         
         return true;
     }
@@ -230,6 +254,27 @@ public class OptionsScraperService
 
             contentText = parts.Item2;
         }
+        
+        return decimal.Parse(contentText);
+    }
+
+    private Task<decimal?> toDecimalPercentage(IElementHandle element)
+    {
+        return toDecimalNullable(element, s => TextUtil.removeEnding(s, "%"));
+    }
+    
+    private async Task<decimal?> toDecimalNullable(IElementHandle element, Func<string,string?> cleanup)
+    {
+        string? contentText = await element.TextContentAsync();
+        if (contentText == null)
+            throw new InvalidOperationException("Cannot extract text from element: " + element);
+
+        contentText = cleanup(contentText);
+        if (String.IsNullOrWhiteSpace(contentText))
+            return null;
+        
+        if (contentText == "--" || contentText == "-")
+            return null;
         
         return decimal.Parse(contentText);
     }

@@ -12,10 +12,16 @@ public class OptionData
     public decimal callLastPrice { get; set; }
     public decimal? callBidPrice { get; set; }
     public decimal? callAskPrice { get; set; }
+    public decimal? callOpenInterest { get; set; }
+    public decimal? callImpliedVolatility { get; set; }
+    public decimal? callDelta { get; set; }
 
     public decimal putLastPrice { get; set; }
     public decimal? putBidPrice { get; set; }
     public decimal? putAskPrice { get; set; }
+    public decimal? putOpenInterest { get; set; }
+    public decimal? putImpliedVolatility { get; set; }
+    public decimal? putDelta { get; set; }
     
     /// <summary>
     /// Ratio of put options to call options, null if not available.

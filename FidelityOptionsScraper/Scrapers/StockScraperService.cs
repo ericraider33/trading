@@ -57,7 +57,7 @@ public class StockScraperService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting stock price for {symbol}: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error getting stock price for {symbol}: {ex.Message}");
             return null;
         }
     }
@@ -98,7 +98,7 @@ public class StockScraperService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error getting stock beta for {symbol}: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error getting stock beta for {symbol}: {ex.Message}");
             return null;
         }
     }    

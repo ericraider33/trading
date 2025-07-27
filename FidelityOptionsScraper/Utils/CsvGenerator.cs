@@ -11,16 +11,22 @@ public static class CsvGenerator
     [
         nameof(OptionData.symbol),
         nameof(OptionData.sharePrice),
+        nameof(OptionData.beta),
         nameof(OptionData.strikePrice),
         nameof(OptionData.expirationDate),
         nameof(OptionData.putCallRatio),
         nameof(OptionData.callLastPrice),
         nameof(OptionData.callBidPrice),
         nameof(OptionData.callAskPrice),
+        nameof(OptionData.callOpenInterest),
+        nameof(OptionData.callImpliedVolatility),
+        nameof(OptionData.callDelta),
         nameof(OptionData.putLastPrice),
         nameof(OptionData.putBidPrice),
         nameof(OptionData.putAskPrice),
-        nameof(OptionData.beta),
+        nameof(OptionData.putOpenInterest),
+        nameof(OptionData.putImpliedVolatility),
+        nameof(OptionData.putDelta),
     ];
 
     private static readonly IObjectConverterFromNameValuePair converter;
