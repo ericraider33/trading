@@ -22,10 +22,19 @@ public class OptionSpread : ICloneable
     
     public decimal strikePriceSell { get; set; }
     public decimal optionPriceSell { get; set; }
+    public decimal deltaSell { get; set; }
     public decimal strikePriceBuy { get; set; }
     public decimal optionPriceBuy { get; set; }
+    public decimal deltaBuy { get; set; }
     
+    /// <summary>
+    /// Difference between the strike prices of the two options, minus the preminum of the spread.
+    /// </summary>
     public decimal maximumLoss { get; set; }
+    
+    /// <summary>
+    /// Difference between costs of the two options, assuming both expire worthless. Premium of the spread.
+    /// </summary>
     public decimal maximumGain { get; set; }
     
     /// <summary>
@@ -33,6 +42,11 @@ public class OptionSpread : ICloneable
     /// Ideal would be 1:1, meaning maximum loss equals maximum gain.
     /// </summary>
     public decimal maximumRatio { get; set; }
+    
+    /// <summary>
+    /// Using the delta as a measure of risk, this is probabilist, cost-weighted value of the spread.
+    /// </summary>
+    public decimal spreadValue { get; set; }
     
     public static OptionSpread fromOptionValues(OptionValues values)
     {

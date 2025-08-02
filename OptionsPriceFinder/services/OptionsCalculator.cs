@@ -1,5 +1,6 @@
 using FidelityOptionsScraper.Models;
 using OptionsPriceFinder.model;
+using OptionsPriceFinder.utils;
 
 namespace OptionsPriceFinder.services;
 
@@ -251,12 +252,25 @@ public class OptionsCalculator
                     continue;
 
                 spread.maximumGain = spread.optionPriceSell - spread.optionPriceBuy;
-                spread.maximumLoss = spread.strikePriceSell - spread.strikePriceBuy;
-                
+                spread.maximumLoss = spread.strikePriceSell - spread.strikePriceBuy - spread.maximumGain;
+                 
                 if (spread.maximumLoss <= 0 || spread.maximumGain <= 0)
                     continue;
                 
                 spread.maximumRatio = Math.Round(spread.maximumLoss / spread.maximumGain, 4, MidpointRounding.ToEven);
+
+                if (!optionSell.putDelta.HasValue || !optionBuy.putDelta.HasValue)
+                    continue;
+                
+                spread.deltaSell = optionSell.putDelta.Value;
+                spread.deltaBuy = optionBuy.putDelta.Value;
+                
+                decimal? spreadValue = calculateSpreadValue(spread);
+                if (spreadValue == null)
+                    continue;
+
+                spread.spreadValue = spreadValue.Value;
+                
                 spreads.Add(spread);                
             }
         }
@@ -264,7 +278,34 @@ public class OptionsCalculator
         if (spreads.Count == 0)
             return null;
         
-        spreads = spreads.OrderBy(x => x.maximumRatio).ToList();
+        spreads = spreads.OrderByDescending(x => x.spreadValue).ToList();
         return spreads.FirstOrDefault();
+    }
+
+    private decimal? calculateSpreadValue(OptionSpread spread)
+    {
+        // Chance that maximum profit is achieved because the spread expires worthless
+        decimal chanceOfExpire = 1 - Math.Abs(spread.deltaSell);
+        
+        // Chance that maximum loss is achieved because the spread is assigned
+        decimal chanceOfAssignment = Math.Abs(spread.deltaBuy);
+        
+        // Chance that prices is between the two strike prices at expiration
+        decimal between = 1 - chanceOfExpire - chanceOfAssignment;
+        
+        // Average between maximum gain and loss
+        decimal averageBetween = MathUtil.average(spread.maximumGain, -1 * spread.maximumLoss);
+        
+        // Using the delta as a measure of risk, this is probabilistic, cost-weighted value of the spread
+        decimal maxGainValue = spread.maximumGain * chanceOfExpire;
+        decimal maxLossValue = -1 * spread.maximumLoss * chanceOfAssignment;
+        decimal betweenValue = between * averageBetween;
+        
+        decimal spreadValue = maxGainValue + maxLossValue + betweenValue;
+
+        if (between <= 0 || chanceOfExpire == 1m || chanceOfAssignment == 0m)
+            return null;
+        
+        return spreadValue;
     }
 }

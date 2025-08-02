@@ -21,7 +21,10 @@ public class OptionSpreadCsvGenerator
         nameof(OptionSpread.optionPriceBuy),
         nameof(OptionSpread.maximumLoss),
         nameof(OptionSpread.maximumGain),
-        nameof(OptionSpread.maximumRatio)
+        nameof(OptionSpread.maximumRatio),
+        nameof(OptionSpread.deltaSell),
+        nameof(OptionSpread.deltaBuy),
+        nameof(OptionSpread.spreadValue)
     ];
 
     private static readonly IObjectConverterFromNameValuePair converter;
