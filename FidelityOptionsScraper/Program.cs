@@ -22,6 +22,7 @@ class Program
             using Pnyx p = new Pnyx();
             p.read(inputFile);
             p.hasLine();
+            p.lineFilter(line => !line.StartsWith("#"));
             symbols = p.processCaptureLines();
         }
         catch (Exception ex)

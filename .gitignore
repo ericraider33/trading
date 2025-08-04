@@ -14,8 +14,6 @@ obj/
 /global.json
 appsettings.local.json
 options_prices.csv
-stocks.txt
-stocks*.txt
 call_values*.csv
 put_values*.csv
 put_spreads*.csv

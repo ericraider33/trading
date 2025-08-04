@@ -33,7 +33,7 @@ public class OptionsScraperService
             await browserService.NavigateToAsync(url);
 
             // Wait for the options chain to load
-            await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 15000 });
+            await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 30000 });
 
             // Get the put/call ratio
             decimal? putCallRatio = await getPutCallRatio(symbol);
