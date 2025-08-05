@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
 using FidelityOptionsScraper.Scrapers;
@@ -89,11 +90,14 @@ class Program
             {
                 Console.WriteLine($"{++num} of {symbols.Count}]: Processing symbol: {symbol}");
                 
+                Stopwatch stopwatch = Stopwatch.StartNew();
                 List<OptionData>? result = await calculationService.fetchOptionsForSymbol(symbol);
                 if (result == null)
                     continue;
                     
                 results.AddRange(result);
+                stopwatch.Stop();
+                Console.WriteLine($"Processed {symbol} in {stopwatch.Elapsed.TotalSeconds:F2} seconds");
             }
                 
             // Generate CSV output
