@@ -52,9 +52,9 @@ class Program
                 if (putValues != null)
                     putValuesList.Add(putValues);
 
-                OptionSpread? putSpread = calculator.calculatePutSpread(symbol, friday.local, options);
-                if (putSpread != null)
-                    putSpreadList.Add(putSpread);
+                List<OptionSpread>? putSpreads = calculator.calculatePutSpread(symbol, friday.local, options, limit: 5);
+                if (putSpreads != null)
+                    putSpreadList.AddRange(putSpreads);
             }
             
             callValuesList = callValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();

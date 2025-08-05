@@ -217,7 +217,7 @@ public class OptionsCalculator
         return result;
     }
     
-    public OptionSpread? calculatePutSpread(string symbol, DateTime expirationDate, List<OptionData> options)
+    public List<OptionSpread>? calculatePutSpread(string symbol, DateTime expirationDate, List<OptionData> options, int limit = 1)
     {
         // Limits to OTM put options (aka with strike price below share price)
         List<OptionData> toReview = options
@@ -278,8 +278,8 @@ public class OptionsCalculator
         if (spreads.Count == 0)
             return null;
         
-        spreads = spreads.OrderByDescending(x => x.spreadValue).ToList();
-        return spreads.FirstOrDefault();
+        spreads = spreads.OrderByDescending(x => x.spreadValue).Take(limit).ToList();
+        return spreads;
     }
 
     private decimal? calculateSpreadValue(OptionSpread spread)

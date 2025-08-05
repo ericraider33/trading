@@ -115,9 +115,6 @@ class Program
             // Ensure browser resources are properly disposed
             await browserService.DisposeAsync();
         }
-            
-        Console.WriteLine("\nPress any key to exit...");
-        Console.ReadKey();
     }
         
     /// <summary>
