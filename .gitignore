@@ -17,4 +17,5 @@ options_prices.csv
 call_values*.csv
 put_values*.csv
 put_spreads*.csv
+history*.csv
 ChromeUserData

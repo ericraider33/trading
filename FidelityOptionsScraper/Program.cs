@@ -15,22 +15,10 @@ class Program
         Console.WriteLine("Fidelity Options Scraper - Starting...");
             
         DirectoryUtil.changeToTradingDirectory();
-        List<string> symbols;
-        try
-        {
-            string inputFile = args.Length > 0 ? args[0] : "stocks.txt";
-            
-            using Pnyx p = new Pnyx();
-            p.read(inputFile);
-            p.hasLine();
-            p.lineFilter(line => !line.StartsWith("#"));
-            symbols = p.processCaptureLines();
-        }
-        catch (Exception ex)
-        {
-            await Console.Error.WriteLineAsync($"Error reading list of stocks: {ex.Message}");
-            symbols = ["AAPL", "NFLX"];
-        }
+
+        // Reads list of ticker symbols
+        string inputFile = args.Length > 0 ? args[0] : "stocks.txt";
+        List<string> symbols = await StockUtil.readSymbols(inputFile);
 
         // Output file path
         string outputPath = "options_prices.csv";
@@ -88,7 +76,7 @@ class Program
             int num = 0;
             foreach (string symbol in symbols)
             {
-                Console.WriteLine($"{++num} of {symbols.Count}]: Processing symbol: {symbol}");
+                Console.WriteLine($"{++num} of {symbols.Count}): Processing symbol: {symbol}");
                 
                 Stopwatch stopwatch = Stopwatch.StartNew();
                 List<OptionData>? result = await calculationService.fetchOptionsForSymbol(symbol);
