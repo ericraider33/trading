@@ -1,7 +1,7 @@
 using AutoMapper;
 using pnyx.net.api;
 
-namespace FidelityOptionsScraper.Utils;
+namespace trading.util;
 
 public class AutoMapperObjectConverter<TEntity> : IObjectConverterFromNameValuePair
 {

@@ -8,6 +8,9 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Reference Include="AutoMapper">
+        <HintPath>..\..\..\.nuget\packages\automapper\14.0.0\lib\net8.0\AutoMapper.dll</HintPath>
+      </Reference>
       <Reference Include="Microsoft.Extensions.Configuration">
         <HintPath>..\..\..\.nuget\packages\microsoft.extensions.configuration\9.0.5\lib\net8.0\Microsoft.Extensions.Configuration.dll</HintPath>
       </Reference>

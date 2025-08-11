@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using Algorithm.model;
 using Flurl;
 using Flurl.Http;
 using trading.util;
@@ -40,12 +40,16 @@ public class HistoryCommand
         try
         {
             string csvData = await "https://www.alphavantage.co"
+                .AppendPathSegment("query")
                 .SetQueryParam("function", "TIME_SERIES_WEEKLY")
                 .SetQueryParam("symbol", symbol)
                 .SetQueryParam("apikey", Settings.instance.alphaVantageApiKey)
-                .SetQueryParam("format", "csv")
+                .SetQueryParam("datatype", "csv")
                 .GetStringAsync();
 
+            if (!HistoryCsv.isHistoryCsv(csvData))
+                throw new Exception($"Invalid csv data: {csvData}");
+            
             return csvData;
         }
         catch (FlurlHttpException ex)

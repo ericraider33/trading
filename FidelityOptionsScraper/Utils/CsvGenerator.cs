@@ -2,6 +2,7 @@ using AutoMapper;
 using FidelityOptionsScraper.Models;
 using pnyx.net.api;
 using pnyx.net.fluent;
+using trading.util;
 
 namespace FidelityOptionsScraper.Utils;
 
