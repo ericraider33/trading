@@ -2,7 +2,12 @@
 
 using System.Diagnostics;
 using algorithm.commands;
+using algorithm.model;
+using algorithm.service;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using trading.util;
 
 // Load configuration
@@ -25,6 +30,26 @@ if (args.Length == 0)
     Environment.Exit(1);
 }
 
+IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
+    .ConfigureLogging(loggingBuilder =>
+    {
+        loggingBuilder.ClearProviders();
+        loggingBuilder.AddConsole();
+    })
+    .ConfigureServices((hostContext, services) =>
+    {
+        services.AddAutoMapper(cfg =>
+        {
+            // Set your license key here
+            cfg.LicenseKey = Settings.instance.autoMapperApiKey;
+        });
+        
+        services.AddSingleton<HistoryCsv>();
+        services.AddSingleton<HistoryRepository>();
+        services.AddSingleton<ReplayCommand>();
+    });            
+using IHost host = hostBuilder.Build();
+
 try
 {
     string[] subArgs = args.Skip(1).ToArray();
@@ -32,6 +57,7 @@ try
     switch (args[0].ToLower())
     {
         case "history": await HistoryCommand.run(subArgs); break;
+        case "replay": await host.Services.GetRequiredService<ReplayCommand>().run(subArgs); break;
         default: 
             throw new Exception($"Unknown command: {args[0]}");
     }

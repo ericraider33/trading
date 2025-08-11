@@ -49,7 +49,6 @@ VZ
 AMD
 GS
 RTX
-BKNG
 PEP
 UBER
 ADBE
@@ -97,4 +96,14 @@ COIN
 HOOD
 GBTC
 MSTR
+MARA
 
+
+#
+# Speculative / High Risk
+#
+SMCI
+SOUN
+DKNG
+OXY
+TTD
