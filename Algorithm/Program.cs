@@ -1,8 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
 using System.Diagnostics;
-using Algorithm;
-using Algorithm.commands;
+using algorithm.commands;
 using Microsoft.Extensions.Configuration;
 using trading.util;
 

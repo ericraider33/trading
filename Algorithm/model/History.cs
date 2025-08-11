@@ -1,4 +1,4 @@
-namespace Algorithm.model;
+namespace algorithm.model;
 
 public class History
 {

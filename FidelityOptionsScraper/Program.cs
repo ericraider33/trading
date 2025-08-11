@@ -3,6 +3,7 @@ using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
 using FidelityOptionsScraper.Scrapers;
 using FidelityOptionsScraper.Utils;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -15,23 +16,43 @@ class Program
     static async Task Main(string[] args)
     {
         Console.WriteLine("Fidelity Options Scraper - Starting...");
-            
+
+        // Load configuration
+        IConfigurationRoot configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: false)
+            .AddJsonFile("appsettings.local.json", optional: true)
+            .Build();
+
+        Settings? settings = configuration.GetSection("settings").Get<Settings>();
+        if (settings == null)
+            throw new Exception("Settings not found");
+        Settings.instance = settings;
+        
+        // Output file path
+        string outputPath = "options_prices.csv";
+        DirectoryUtil.changeToTradingDirectory();
+        
         IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
             .ConfigureLogging(loggingBuilder =>
             {
                 loggingBuilder.ClearProviders();
                 loggingBuilder.AddConsole();
-            });
+            })
+            .ConfigureServices((hostContext, services) =>
+            {
+                services.AddAutoMapper(cfg =>
+                {
+                    // Set your license key here
+                    cfg.LicenseKey = Settings.instance.autoMapperApiKey;
+                });
+            });            
         using IHost host = hostBuilder.Build();
         ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();            
 
         // Reads list of ticker symbols
         string inputFile = args.Length > 0 ? args[0] : "stocks.txt";
         List<string> symbols = await StockUtil.readSymbols(inputFile);
-
-        // Output file path
-        string outputPath = "options_prices.csv";
-        DirectoryUtil.changeToTradingDirectory();
             
         // Initialize browser service
         BrowserService browserService = new BrowserService();

@@ -26,6 +26,11 @@ class Program
                 .AddJsonFile("appsettings.json", optional: false)
                 .AddJsonFile("appsettings.local.json", optional: true)
                 .Build();
+
+            Settings? settings = configuration.GetSection("settings").Get<Settings>();
+            if (settings == null)
+                throw new Exception("Settings not found");
+            Settings.instance = settings;
             
             IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
                 .ConfigureLogging(loggingBuilder =>

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using trading.util;
 
-namespace Algorithm.model;
+namespace algorithm.model;
 
 public class HistoryCsv : CsvMapper<History>
 {

@@ -1,9 +1,9 @@
-using Algorithm.model;
+using algorithm.model;
 using Flurl;
 using Flurl.Http;
 using trading.util;
 
-namespace Algorithm.commands;
+namespace algorithm.commands;
 
 public class HistoryCommand
 {
