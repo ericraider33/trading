@@ -1,6 +1,9 @@
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Utils;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using OptionsPriceFinder.model;
 using OptionsPriceFinder.services;
 using OptionsPriceFinder.utils;
@@ -23,11 +26,21 @@ class Program
                 .AddJsonFile("appsettings.json", optional: false)
                 .AddJsonFile("appsettings.local.json", optional: true)
                 .Build();
+            
+            IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
+                .ConfigureLogging(loggingBuilder =>
+                {
+                    loggingBuilder.ClearProviders();
+                    loggingBuilder.AddConsole();
+                });
+            using IHost host = hostBuilder.Build();
+            ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();            
 
             DirectoryUtil.changeToTradingDirectory();
 
             string outputPath = "options_prices.csv";
-            List<OptionData> options = CsvGenerator.readCsv(outputPath);
+            OptionDataCsv odCsv = new OptionDataCsv(loggerFactory);
+            List<OptionData> options = odCsv.readCsv(outputPath);
 
             LocalTimestamp localTimestamp = LocalTimestamp.fromLocal(TimeZoneInfo.Local, DateTime.Now);
             LocalDay today = localTimestamp.day;
@@ -58,13 +71,15 @@ class Program
             }
             
             callValuesList = callValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
-            OptionValuesCsvGenerator.writeCsv(callValuesList, $"call_values_{today.ToString()}.csv");
+            OptionValuesCsv ovGenerater = new OptionValuesCsv(loggerFactory);
+            ovGenerater.writeCsv(callValuesList, $"call_values_{today.ToString()}.csv");
             
             putValuesList = putValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
-            OptionValuesCsvGenerator.writeCsv(putValuesList, $"put_values_{today.ToString()}.csv");
+            ovGenerater.writeCsv(putValuesList, $"put_values_{today.ToString()}.csv");
 
             putSpreadList = putSpreadList.OrderByDescending(o => o.spreadValue).ToList();
-            OptionSpreadCsvGenerator.writeCsv(putSpreadList, $"put_spreads_{today.ToString()}.csv");
+            OptionSpreadCsv osGenerator = new OptionSpreadCsv(loggerFactory);
+            osGenerator.writeCsv(putSpreadList, $"put_spreads_{today.ToString()}.csv");
             
             Console.WriteLine("DONE");
         }

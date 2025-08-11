@@ -3,7 +3,9 @@ using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
 using FidelityOptionsScraper.Scrapers;
 using FidelityOptionsScraper.Utils;
-using pnyx.net.fluent;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using trading.util;
 
 namespace FidelityOptionsScraper;
@@ -14,7 +16,14 @@ class Program
     {
         Console.WriteLine("Fidelity Options Scraper - Starting...");
             
-        DirectoryUtil.changeToTradingDirectory();
+        IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
+            .ConfigureLogging(loggingBuilder =>
+            {
+                loggingBuilder.ClearProviders();
+                loggingBuilder.AddConsole();
+            });
+        using IHost host = hostBuilder.Build();
+        ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();            
 
         // Reads list of ticker symbols
         string inputFile = args.Length > 0 ? args[0] : "stocks.txt";
@@ -89,7 +98,8 @@ class Program
             }
                 
             // Generate CSV output
-            CsvGenerator.writeCsv(results, outputPath);
+            OptionDataCsv odGenerator = new OptionDataCsv(loggerFactory);
+            odGenerator.writeCsv(results, outputPath);
                 
             Console.WriteLine("\nProcessing complete!");
         }

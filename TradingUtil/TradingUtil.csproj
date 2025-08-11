@@ -9,13 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="pnyx.net" Version="1.0.15" />
+        <PackageReference Include="AutoMapper" Version="15.0.1" />
+        <PackageReference Include="pnyx.net" Version="1.0.15" />
     </ItemGroup>
-
-    <ItemGroup>
-      <Reference Include="AutoMapper">
-        <HintPath>..\..\..\.nuget\packages\automapper\14.0.0\lib\net8.0\AutoMapper.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-
+    
 </Project>
