@@ -1,4 +1,5 @@
 using algorithm.model;
+using pnyx.net.util;
 
 namespace algorithm.service;
 
@@ -19,7 +20,7 @@ public class HistoryRepository
         string[] files = Directory.GetFiles(".", "history_*.csv");
         foreach (string toRead in files)    
         {
-            string symbol = toRead.Replace("history_", "").Replace(".csv", "");
+            string symbol = toRead.splitAt("history_").Item2.Replace(".csv", "").ToUpper();
             List<History> historyList = historyCsv.readCsv(toRead);
             foreach (History history in historyList)
                 history.symbol = symbol;

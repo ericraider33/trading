@@ -58,6 +58,7 @@ class Program
             
             HashSet<string> symbols = calculator.symbols(options);
             List<OptionValues> callValuesList = new List<OptionValues>();
+            List<OptionSpread> callSpreadList = new List<OptionSpread>();
             List<OptionValues> putValuesList = new List<OptionValues>();
             List<OptionSpread> putSpreadList = new List<OptionSpread>();
             foreach (string symbol in symbols)
@@ -65,6 +66,10 @@ class Program
                 OptionValues? callValues = calculator.calculateCallOptions(symbol, friday.local, options);
                 if (callValues != null)
                     callValuesList.Add(callValues);
+
+                List<OptionSpread>? callSpreads = calculator.calculateCallSpread(symbol, friday.local, options, limit: 5);
+                if (callSpreads != null)
+                    callSpreadList.AddRange(callSpreads);
                 
                 OptionValues? putValues = calculator.calculatePutOptions(symbol, friday.local, options);
                 if (putValues != null)
@@ -79,11 +84,14 @@ class Program
             OptionValuesCsv ovGenerater = new OptionValuesCsv(loggerFactory);
             ovGenerater.writeCsv(callValuesList, $"call_values_{today.ToString()}.csv");
             
+            callSpreadList = callSpreadList.OrderByDescending(o => o.spreadValue).ToList();
+            OptionSpreadCsv osGenerator = new OptionSpreadCsv(loggerFactory);
+            osGenerator.writeCsv(callSpreadList, $"call_spreads_{today.ToString()}.csv");
+            
             putValuesList = putValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
             ovGenerater.writeCsv(putValuesList, $"put_values_{today.ToString()}.csv");
 
             putSpreadList = putSpreadList.OrderByDescending(o => o.spreadValue).ToList();
-            OptionSpreadCsv osGenerator = new OptionSpreadCsv(loggerFactory);
             osGenerator.writeCsv(putSpreadList, $"put_spreads_{today.ToString()}.csv");
             
             Console.WriteLine("DONE");

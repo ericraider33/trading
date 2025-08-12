@@ -281,7 +281,72 @@ public class OptionsCalculator
         spreads = spreads.OrderByDescending(x => x.spreadValue).Take(limit).ToList();
         return spreads;
     }
+    
+    public List<OptionSpread>? calculateCallSpread(string symbol, DateTime expirationDate, List<OptionData> options, int limit = 1)
+    {
+        // Limits to OTM call options (aka with strike price above share price)
+        List<OptionData> toReview = options
+            .Where(x => x.symbol == symbol && x.expirationDate == expirationDate && x.strikePrice > x.sharePrice)
+            .OrderBy(x => x.strikePrice)
+            .ToList();
 
+        if (toReview.Count < 2)
+            return null;
+
+        OptionValues values = calculateBasis(toReview[0]);
+        if (values.shares == 0)
+            return null;
+
+        OptionSpread spreadBase = OptionSpread.fromOptionValues(values);
+        List<OptionSpread> spreads = new();
+
+        for (int i = 0; i < toReview.Count - 1; i++)
+        {
+            OptionData optionSell = toReview[i];
+            for (int j = i + 1; j < toReview.Count; j++)
+            {
+                OptionSpread spread = spreadBase.cloneAs();
+                OptionData optionBuy = toReview[j];
+                
+                spread.strikePriceSell = optionSell.strikePrice;
+                spread.optionPriceSell = optionSell.getCallPriceBestGuess() ?? -1m;
+                spread.strikePriceBuy = optionBuy.strikePrice;
+                spread.optionPriceBuy = optionBuy.getCallPriceBestGuess() ?? -1m;
+                
+                if (spread.optionPriceSell <= 0 || spread.optionPriceBuy <= 0)
+                    continue;
+
+                spread.maximumGain = spread.optionPriceSell - spread.optionPriceBuy;
+                spread.maximumLoss = spread.strikePriceBuy - spread.strikePriceSell - spread.maximumGain;
+                 
+                if (spread.maximumLoss <= 0 || spread.maximumGain <= 0)
+                    continue;
+                
+                spread.maximumRatio = Math.Round(spread.maximumLoss / spread.maximumGain, 4, MidpointRounding.ToEven);
+
+                if (!optionSell.callDelta.HasValue || !optionBuy.callDelta.HasValue)
+                    continue;
+                
+                spread.deltaSell = optionSell.callDelta.Value;
+                spread.deltaBuy = optionBuy.callDelta.Value;
+                
+                decimal? spreadValue = calculateSpreadValue(spread);
+                if (spreadValue == null)
+                    continue;
+
+                spread.spreadValue = spreadValue.Value;
+                
+                spreads.Add(spread);                
+            }
+        }
+
+        if (spreads.Count == 0)
+            return null;
+        
+        spreads = spreads.OrderByDescending(x => x.spreadValue).Take(limit).ToList();
+        return spreads;
+    }
+    
     private decimal? calculateSpreadValue(OptionSpread spread)
     {
         // Chance that maximum profit is achieved because the spread expires worthless

@@ -8,5 +8,5 @@ public class History
     public decimal high { get; set; }
     public decimal low { get; set; }
     public decimal close { get; set; }
-    public int volume { get; set; }
+    public long volume { get; set; }
 }

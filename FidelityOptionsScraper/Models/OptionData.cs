@@ -77,7 +77,7 @@ public class OptionData
         if (putBidPrice.Value == 0 || putAskPrice.Value == 0)
             return null;
 
-        // nonsnse range, cannot calculate best guess
+        // none sense range, cannot calculate best guess
         if (putBidPrice.Value >= putAskPrice.Value)
             return null;                
 
@@ -104,5 +104,43 @@ public class OptionData
         // When higher, simply return midpoint so-as to avoid overestimating the price. 
         return midPoint;
     }
- 
+    
+    public decimal? getCallPriceBestGuess()
+    {
+        // missing bid or ask price
+        if (!callBidPrice.HasValue || !callAskPrice.HasValue) 
+            return null;
+        
+        // missing bid or ask price
+        if (callBidPrice.Value == 0 || callAskPrice.Value == 0)
+            return null;
+
+        // none sense range, cannot calculate best guess
+        if (callBidPrice.Value >= callAskPrice.Value)
+            return null;                
+
+        // missing last price
+        if (callLastPrice == 0)
+            return null;
+
+        decimal midPoint = (callBidPrice.Value + callAskPrice.Value) / 2;
+        decimal weightedLow = callBidPrice.Value * 0.75m + callAskPrice.Value * 0.25m;
+        decimal weightedHigh = callBidPrice.Value * 0.25m + callAskPrice.Value * 0.75m;
+        
+        // Checks if the last price is well within the bid-ask range,
+        // in which case it is returned as the best guess.
+        if (callLastPrice >= weightedLow && callLastPrice <= weightedHigh)
+            return callLastPrice;
+        
+        if (callLastPrice <= callAskPrice.Value && callLastPrice >= weightedHigh)
+            return callLastPrice;
+            
+        // If the last price is above the ask price, return a weighted average that favors the ask price.
+        if (callLastPrice >= callAskPrice.Value)
+            return callAskPrice.Value * 0.90m + callBidPrice.Value * 0.10m;
+        
+        // When lower, simply return midpoint so-as to avoid underestimating the price. 
+        return midPoint;
+    }
+    
 }

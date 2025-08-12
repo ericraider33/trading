@@ -67,6 +67,9 @@ try
 }
 catch (Exception ex)
 {
+    while (ex.InnerException != null)
+        ex = ex.InnerException;
+    
     Console.WriteLine($"An error occurred: {ex.Message}");
     Console.WriteLine(ex.StackTrace);
 }

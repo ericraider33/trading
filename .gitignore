@@ -15,6 +15,7 @@ obj/
 appsettings.local.json
 options_prices.csv
 call_values*.csv
+call_spreads*.csv
 put_values*.csv
 put_spreads*.csv
 history*.csv
