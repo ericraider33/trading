@@ -69,4 +69,14 @@ public class OptionSpread : ICloneable
     {
         return (OptionSpread)MemberwiseClone();
     }
+
+    public bool isStrikeFurtherThan(decimal percentage)
+    {
+        decimal diff = Math.Abs(sharePrice - strikePriceSell);
+        if (diff <= 0m || sharePrice <= 0)
+            return false;
+
+        decimal actual = diff / sharePrice;
+        return actual >= percentage;
+    }
 }

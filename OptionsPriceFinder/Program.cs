@@ -67,7 +67,7 @@ class Program
                 if (callValues != null)
                     callValuesList.Add(callValues);
 
-                List<OptionSpread>? callSpreads = calculator.calculateCallSpread(symbol, friday.local, options, limit: 5);
+                List<OptionSpread>? callSpreads = calculator.calculateCallSpread(symbol, friday.local, options, limit: 10);
                 if (callSpreads != null)
                     callSpreadList.AddRange(callSpreads);
                 
@@ -75,7 +75,7 @@ class Program
                 if (putValues != null)
                     putValuesList.Add(putValues);
 
-                List<OptionSpread>? putSpreads = calculator.calculatePutSpread(symbol, friday.local, options, limit: 5);
+                List<OptionSpread>? putSpreads = calculator.calculatePutSpread(symbol, friday.local, options, limit: 10);
                 if (putSpreads != null)
                     putSpreadList.AddRange(putSpreads);
             }
@@ -84,7 +84,10 @@ class Program
             OptionValuesCsv ovGenerater = new OptionValuesCsv(loggerFactory);
             ovGenerater.writeCsv(callValuesList, $"call_values_{today.ToString()}.csv");
             
-            callSpreadList = callSpreadList.OrderByDescending(o => o.spreadValue).ToList();
+            callSpreadList = callSpreadList
+                .Where(o => o.isStrikeFurtherThan(.03m))
+                .OrderByDescending(o => o.spreadValue)
+                .ToList();
             OptionSpreadCsv osGenerator = new OptionSpreadCsv(loggerFactory);
             osGenerator.writeCsv(callSpreadList, $"call_spreads_{today.ToString()}.csv");
             
