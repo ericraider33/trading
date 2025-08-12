@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/globals/">
+    <File Path="stocks.txt" />
+    <File Path="README.md" />
+    <File Path="LICENSE" />
+  </Folder>
+  <Project Path="Algorithm/Algorithm.csproj" />
+  <Project Path="FidelityOptionsScraper/FidelityOptionsScraper.csproj" />
+  <Project Path="OptionsPriceFinder/OptionsPriceFinder.csproj" />
+  <Project Path="TradingUtil/TradingUtil.csproj" />
+</Solution>
