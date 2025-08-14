@@ -11,12 +11,12 @@ public class FixedInvestment : IInvestment
     /// <summary>
     /// Target weight of the stock in this investment strategy.
     /// </summary>
-    public decimal targetWeight { get; set; } = 0.8m;
+    public decimal targetWeight { get; set; } = 0.90m;
     
-    public int minimumTransactionQuantity { get; set; } = 1;        // minimum transaction size in shares
+    public int minimumTransactionQuantity { get; set; } = 10;        // minimum transaction size in shares
     public decimal minimumTransactionValue { get; set; } = 100m;   // minimum transaction size in dollars
     
-    public PositionInvestment run(PositionInvestment initialInvestment, List<History> historyList)
+    public virtual PositionInvestment run(PositionInvestment initialInvestment, List<History> historyList)
     {
         PositionInvestment result = (PositionInvestment)initialInvestment.Clone();
 
@@ -28,7 +28,7 @@ public class FixedInvestment : IInvestment
         return result;
     }
 
-    private void balance(PositionInvestment investment, History history)
+    protected void balance(PositionInvestment investment, History history)
     {
         decimal cashValue = investment.cash.quantity;
         decimal stockValue = investment.position.quantity * history.open;

@@ -20,6 +20,7 @@ public class ReplayCommand
         
         Console.WriteLine($"Replaying {symbols.Count} symbols history");
         IInvestment algorithm = new FixedInvestment();
+        IInvestment buyAndHold = new BuyAndHoldInvestment();
         
         int num = 0;
         foreach (string symbol in symbols)
@@ -42,10 +43,13 @@ public class ReplayCommand
             List<History> historyList = histories.Where(h => h.timestamp >= startRange).ToList();
             PositionInvestment initialInvestment = PositionInvestment.fromCash(symbol, 100_000m);
             PositionInvestment currentInvestment = algorithm.run(initialInvestment, historyList);
+            PositionInvestment baselineInvestment = buyAndHold.run(initialInvestment, historyList);
             
-            Console.WriteLine($"{num} of {symbols.Count}) Replaying {histories.Count} history for stock={symbol}");
-            Console.WriteLine($"Gains: ${currentInvestment.gains(initialInvestment, openPrice, closePrice)}");
+            decimal gainsAlgorithm = currentInvestment.gains(initialInvestment, openPrice, closePrice);
+            decimal gainsBaseline = baselineInvestment.gains(initialInvestment, openPrice, closePrice);
             
+//            Console.WriteLine($"{num} of {symbols.Count}) Replaying {histories.Count} history for stock={symbol}");
+            Console.WriteLine($"{symbol} Gains: ${gainsAlgorithm} vs. ${gainsBaseline} or {gainsAlgorithm / gainsBaseline:P2} relative to buy-and-hold with {currentInvestment.transactions.Count} transactions");
         }
     }
 }
