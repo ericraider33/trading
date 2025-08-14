@@ -25,6 +25,7 @@ public class HistoryRepository
             foreach (History history in historyList)
                 history.symbol = symbol;
             
+            historyList = historyList.OrderBy(h => h.timestamp).ToList();
             toLoad.Add(symbol, historyList);
         }
 

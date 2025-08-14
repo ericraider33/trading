@@ -1,3 +1,4 @@
+using algorithm.algorithms;
 using algorithm.model;
 using algorithm.service;
 
@@ -18,13 +19,33 @@ public class ReplayCommand
         List<string> symbols = history.Keys.Order().ToList();
         
         Console.WriteLine($"Replaying {symbols.Count} symbols history");
-
+        IInvestment algorithm = new FixedInvestment();
+        
         int num = 0;
         foreach (string symbol in symbols)
         {
             num++;
 
-            Console.WriteLine($"{num} of {symbols.Count}) Replaying history for stock={symbol}");
+            List<History>? histories = history.GetValueOrDefault(symbol);
+            if (histories == null || histories.Count <= 2)
+                continue;
+            
+            DateTime startTime = histories.First().timestamp;
+            DateTime endTime = histories.Last().timestamp;
+            Decimal openPrice = histories.First().open;
+            Decimal closePrice = histories.Last().close;
+
+            DateTime startRange = endTime.AddYears(-1);
+            if (startRange < startTime)
+                continue;                                                   // not enough history
+            
+            List<History> historyList = histories.Where(h => h.timestamp >= startRange).ToList();
+            PositionInvestment initialInvestment = PositionInvestment.fromCash(symbol, 100_000m);
+            PositionInvestment currentInvestment = algorithm.run(initialInvestment, historyList);
+            
+            Console.WriteLine($"{num} of {symbols.Count}) Replaying {histories.Count} history for stock={symbol}");
+            Console.WriteLine($"Gains: ${currentInvestment.gains(initialInvestment, openPrice, closePrice)}");
+            
         }
     }
 }
