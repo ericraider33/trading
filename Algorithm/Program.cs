@@ -47,6 +47,7 @@ IHostBuilder hostBuilder = Host.CreateDefaultBuilder()
         services.AddSingleton<HistoryCsv>();
         services.AddSingleton<HistoryRepository>();
         services.AddSingleton<ReplayCommand>();
+        services.AddSingleton<HistoryCalculations>();
     });            
 using IHost host = hostBuilder.Build();
 
