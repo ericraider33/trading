@@ -46,16 +46,23 @@ class Program
                     // Set your license key here
                     cfg.LicenseKey = Settings.instance.autoMapperApiKey;
                 });
+
+                services.AddSingleton<StockBetaCsv>();
+                services.AddSingleton<StockBetaRepository>();
+                services.AddSingleton<BrowserService>();
+                services.AddSingleton<StockScraperService>();
+                services.AddSingleton<OptionsScraperService>();
+                services.AddSingleton<OptionsCalculationService>();
+                services.AddSingleton<OptionDataCsv>();
             });            
         using IHost host = hostBuilder.Build();
-        ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();            
 
         // Reads list of ticker symbols
         string inputFile = args.Length > 0 ? args[0] : "stocks.txt";
         List<string> symbols = await StockUtil.readSymbols(inputFile);
             
         // Initialize browser service
-        BrowserService browserService = new BrowserService();
+        BrowserService browserService = host.Services.GetRequiredService<BrowserService>();
             
         try
         {
@@ -94,11 +101,7 @@ class Program
                 }
             }
                 
-            // Initialize services
-            StockScraperService stockScraper = new StockScraperService(browserService);
-            OptionsScraperService optionsScraper = new OptionsScraperService(browserService);
-            OptionsCalculationService calculationService = new OptionsCalculationService(stockScraper, optionsScraper);
-                
+            OptionsCalculationService calculationService = host.Services.GetRequiredService<OptionsCalculationService>();
             Console.WriteLine($"\nProcessing {symbols.Count} symbols: {string.Join(", ", symbols)}");
                 
             // Process each symbol
@@ -119,7 +122,7 @@ class Program
             }
                 
             // Generate CSV output
-            OptionDataCsv odGenerator = new OptionDataCsv(loggerFactory);
+            OptionDataCsv odGenerator = host.Services.GetRequiredService<OptionDataCsv>();
             odGenerator.writeCsv(results, outputPath);
                 
             Console.WriteLine("\nProcessing complete!");

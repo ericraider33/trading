@@ -25,7 +25,7 @@ public class OptionsCalculationService
             Console.WriteLine($"Processing {symbol}...");
                 
             // Get current stock price
-            StockPrice? stockPrice = await stockScraper.getCurrentPrice(symbol);
+            StockBeta? stockPrice = await stockScraper.getCurrentPrice(symbol);
                 
             Console.WriteLine($"Current beta for {symbol}: ${stockPrice?.beta}");
             List<OptionData>? options = await optionsScraper.getCallAndPutOptionPrices(symbol);

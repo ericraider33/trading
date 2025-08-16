@@ -7,11 +7,13 @@ namespace FidelityOptionsScraper.Scrapers;
 
 public class StockScraperService
 {
+    private readonly StockBetaRepository repository;
     private readonly BrowserService browserService;
 
-    public StockScraperService(BrowserService browserService)
+    public StockScraperService(BrowserService browserService, StockBetaRepository repository)
     {
         this.browserService = browserService;
+        this.repository = repository;
     }
 
     /// <summary>
@@ -19,21 +21,31 @@ public class StockScraperService
     /// </summary>
     /// <param name="symbol">The stock symbol</param>
     /// <returns>StockPrice object with current price information</returns>
-    public async Task<StockPrice?> getCurrentPrice(string symbol)
+    public async Task<StockBeta?> getCurrentPrice(string symbol)
     {
+        StockBeta? existing = await repository.findBeta(symbol);
+        if (existing != null)
+            return existing;
+        
         if (browserService.CurrentPage == null)
             throw new InvalidOperationException("Browser not initialized");
 
         try
         {
-            StockPrice result = new StockPrice { Symbol = symbol };
+            StockBeta result = new StockBeta { symbol = symbol };
+            decimal? beta = await getBeta(symbol);
+            if (beta == null)
+                return null;
 
-            result.beta = await getBeta(symbol);
+            result.beta = beta.Value;
+            await repository.addBeta(result);
+            await repository.save();
+            
             return result;
         }
         catch (Exception ex)
         {
-            await Console.Error.WriteLineAsync($"Error getting stock price for {symbol}: {ex.Message}");
+            await Console.Error.WriteLineAsync($"Error getting stock beta for {symbol}: {ex.Message}");
             return null;
         }
     }
