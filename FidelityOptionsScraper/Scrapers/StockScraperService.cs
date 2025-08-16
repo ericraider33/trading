@@ -24,33 +24,9 @@ public class StockScraperService
         if (browserService.CurrentPage == null)
             throw new InvalidOperationException("Browser not initialized");
 
-        const string quoteSelector = ".nre-quick-quote-price";
         try
         {
-            // Navigate to the stock quote page
-            string url = $"https://digital.fidelity.com/prgw/digital/research/quote/dashboard/summary?symbol={symbol}";
-            await browserService.NavigateToAsync(url);
-
-            // Wait for the price element to be visible
-            await browserService.CurrentPage.WaitForSelectorAsync(quoteSelector, new PageWaitForSelectorOptions { Timeout = 10000 });
-
-            // Extract the current price
-            string priceText = await browserService.CurrentPage.TextContentAsync(quoteSelector) ?? "0";
-            priceText = priceText.Trim().Replace("$", "").Replace(",", "");
-
-            decimal price;
-            if (!decimal.TryParse(priceText, out price))
-            {
-                Console.WriteLine($"Failed to parse price: {priceText}");
-                return null;
-            }
-            
-            StockPrice result = new StockPrice
-            {
-                Symbol = symbol,
-                CurrentPrice = price,
-                RetrievalTime = DateTime.Now
-            };
+            StockPrice result = new StockPrice { Symbol = symbol };
 
             result.beta = await getBeta(symbol);
             return result;

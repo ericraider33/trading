@@ -48,6 +48,7 @@ public class OptionsScraperService
             oarPanelQuoteDoc.LoadHtml(oarPanelQuoteHtmlAsText);            
             
             // Get the put/call ratio
+            decimal sharePrice = getSharePrice(oarPanelQuoteDoc);
             decimal? putCallRatio = getPutCallRatio(oarPanelQuoteDoc, symbol);
             
             List<(DateTime, int)> dateGroupings = findDateGroupings(rootDoc);
@@ -72,7 +73,10 @@ public class OptionsScraperService
                 
                 // Adds put/call ratio to each option
                 foreach (OptionData row in rows)
+                {
+                    row.sharePrice = sharePrice;
                     row.putCallRatio = putCallRatio;
+                }
             }
         }
         catch (Exception ex)
@@ -88,6 +92,25 @@ public class OptionsScraperService
         }   
         
         return results;
+    }
+
+    private decimal getSharePrice(HtmlDocument doc)
+    {
+        HtmlNode quoteContainerElement = doc.DocumentNode.SelectSingleNode("//div[contains(@class, 'oar-quote-info-container')]");
+        if (quoteContainerElement == null)
+            throw new Exception("No quote element found");
+        
+        HtmlNode quoteElement = quoteContainerElement.SelectSingleNode("//span[@class='oar-quote-last']");
+        if (quoteElement == null)
+            throw new Exception("No quote element found");
+            
+        string contentText = quoteElement.InnerText;
+        contentText = contentText.Replace("$", "").Trim();
+        contentText = contentText.Trim().splitAt(" ").Item1;
+        if (String.IsNullOrEmpty(contentText))
+            throw new Exception($"Quote text is not formated as expected: {quoteElement.InnerText}");
+
+        return decimal.Parse(contentText);
     }
 
     private decimal? getPutCallRatio(HtmlDocument doc, string symbol)
@@ -215,7 +238,7 @@ public class OptionsScraperService
 
         HtmlNode callDeltaElement = toCheck.SelectSingleNode("./div[@col-id='callDelta']");
         if (callDeltaElement != null)
-            row.callDelta = toDecimal(callDeltaElement);
+            row.callDelta = toDecimalNullable(callDeltaElement);
         
         return true;
     }
@@ -246,7 +269,7 @@ public class OptionsScraperService
 
         HtmlNode putDeltaElement = toCheck.SelectSingleNode("./div[@col-id='putDelta']");
         if (putDeltaElement != null)
-            row.putDelta = toDecimal(putDeltaElement);
+            row.putDelta = toDecimalNullable(putDeltaElement);
         
         return true;
     }
@@ -274,13 +297,15 @@ public class OptionsScraperService
         return toDecimalNullable(element, s => TextUtil.removeEnding(s, "%"));
     }
     
-    private decimal? toDecimalNullable(HtmlNode element, Func<string,string?> cleanup)
+    private decimal? toDecimalNullable(HtmlNode element, Func<string,string?>? cleanup = null)
     {
         string? contentText = element.InnerText;
         if (contentText == null)
             throw new InvalidOperationException("Cannot extract text from element: " + element);
 
-        contentText = cleanup(contentText);
+        if (cleanup != null)
+            contentText = cleanup(contentText);
+        
         if (String.IsNullOrWhiteSpace(contentText))
             return null;
         

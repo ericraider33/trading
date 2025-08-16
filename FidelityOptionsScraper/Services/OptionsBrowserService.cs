@@ -26,16 +26,8 @@ public class OptionsCalculationService
                 
             // Get current stock price
             StockPrice? stockPrice = await stockScraper.getCurrentPrice(symbol);
-            if (stockPrice == null)
-                return null;
                 
-            Console.WriteLine($"Current price for {symbol}: ${stockPrice.CurrentPrice}");
-            if (stockPrice.CurrentPrice <= 0)
-            {
-                Console.WriteLine($"Warning: Invalid price for {symbol}. Skipping options calculation.");
-                return null;
-            }
-
+            Console.WriteLine($"Current beta for {symbol}: ${stockPrice?.beta}");
             List<OptionData>? options = await optionsScraper.getCallAndPutOptionPrices(symbol);
             if (options == null)
                 return null;
@@ -43,8 +35,7 @@ public class OptionsCalculationService
             // Saves the current stock price to each option
             foreach (OptionData option in options)
             {
-                option.sharePrice = stockPrice.CurrentPrice;
-                option.beta = stockPrice.beta;
+                option.beta = stockPrice?.beta;
             }
 
             return options;
@@ -52,6 +43,7 @@ public class OptionsCalculationService
         catch (Exception ex)
         {
             await Console.Error.WriteLineAsync($"Error finding options for {symbol}: {ex.Message}");
+            await Console.Error.WriteLineAsync(ex.StackTrace);
             return null;
         }
     }
