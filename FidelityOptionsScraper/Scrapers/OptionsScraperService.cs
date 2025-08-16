@@ -1,6 +1,7 @@
 using Microsoft.Playwright;
 using FidelityOptionsScraper.Models;
 using FidelityOptionsScraper.Services;
+using HtmlAgilityPack;
 using pnyx.net.util;
     
 namespace FidelityOptionsScraper.Scrapers;
@@ -33,13 +34,23 @@ public class OptionsScraperService
             await browserService.NavigateToAsync(url);
 
             // Wait for the options chain to load
-            await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 30000 });
-
-            // Get the put/call ratio
-            decimal? putCallRatio = await getPutCallRatio(symbol);
+            IElementHandle? root = await browserService.CurrentPage.WaitForSelectorAsync(".ag-root-wrapper", new PageWaitForSelectorOptions { Timeout = 30000 });
+            IElementHandle? oarPanelQuote = await browserService.CurrentPage.QuerySelectorAsync(".oar-panel.quote");
+            if (root == null || oarPanelQuote == null)
+                return null;
             
-            IReadOnlyList<IElementHandle> dateRowGroup = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-row-group");
-            List<(DateTime, int)> dateGroupings = await findDateGroupings(dateRowGroup);
+            string rootHtmlAsText = await root.InnerHTMLAsync();
+            string oarPanelQuoteHtmlAsText = await oarPanelQuote.InnerHTMLAsync();
+            
+            HtmlDocument rootDoc = new HtmlDocument();
+            rootDoc.LoadHtml(rootHtmlAsText);            
+            HtmlDocument oarPanelQuoteDoc = new HtmlDocument();
+            oarPanelQuoteDoc.LoadHtml(oarPanelQuoteHtmlAsText);            
+            
+            // Get the put/call ratio
+            decimal? putCallRatio = getPutCallRatio(oarPanelQuoteDoc, symbol);
+            
+            List<(DateTime, int)> dateGroupings = findDateGroupings(rootDoc);
             Console.WriteLine($"DateGroupings count: {dateGroupings.Count}");
             if (dateGroupings.Count == 0)
                 return null;
@@ -49,12 +60,13 @@ public class OptionsScraperService
                 Console.WriteLine();
                 Console.WriteLine($"Fetching options for expiration date: {expirationDate.toIso8601Date()}");
                 
-                IReadOnlyList<IElementHandle> rowElements = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-center-cols-container .ag-row");
-                Console.WriteLine($"OptionsElements: {rowElements.Count}");
-                if (rowElements.Count == 0)
+                // IReadOnlyList<IElementHandle> rowElements = await browserService.CurrentPage.QuerySelectorAllAsync(".ag-center-cols-container .ag-row");
+                HtmlNodeCollection rowElements = rootDoc.DocumentNode.SelectNodes("//div[contains(@class, 'ag-center-cols-container')]//div[contains(@class, 'ag-row')]");
+                Console.WriteLine($"OptionsElements: {rowElements?.Count ?? 0}");
+                if (rowElements == null || rowElements.Count == 0)
                     continue;
-
-                List<OptionData> rows = await findOptionData(symbol, expirationDate, rowElements, rowIndex);
+                
+                List<OptionData> rows = findOptionData(symbol, expirationDate, rowElements, rowIndex);
                 Console.WriteLine($"Rows: {rows.Count}");
                 results.AddRange(rows);
                 
@@ -77,22 +89,16 @@ public class OptionsScraperService
         
         return results;
     }
-    
-    private async Task<decimal?> getPutCallRatio(string symbol)
-    {
-        if (browserService.CurrentPage == null)
-            throw new InvalidOperationException("Browser not initialized");
 
+    private decimal? getPutCallRatio(HtmlDocument doc, string symbol)
+    {
         try
         {
-            IElementHandle? putCallRatioElement = await browserService.CurrentPage.QuerySelectorAsync(".ratio-value");
+            HtmlNode putCallRatioElement = doc.DocumentNode.SelectSingleNode("//div[@class='ratio-value']");
             if (putCallRatioElement == null)
                 return null;
-
-            string? contentText = await putCallRatioElement.TextContentAsync();
-            if (contentText == null)
-                return null;
-
+            
+            string contentText = putCallRatioElement.InnerText;
             contentText = contentText.Trim().splitAt(" ").Item1;
             if (String.IsNullOrEmpty(contentText))
                 return null;
@@ -101,21 +107,26 @@ public class OptionsScraperService
         }
         catch (Exception ex)
         {
-            await Console.Error.WriteLineAsync($"Error getting put/call ratio for {symbol}: {ex.Message}");
+            Console.Error.WriteLine($"Error getting put/call ratio for {symbol}: {ex.Message}");
             return null;
         }
     }
-
-    private async Task<List<(DateTime, int)>> findDateGroupings(IReadOnlyList<IElementHandle> optionsGroups)
+    
+    private List<(DateTime, int)> findDateGroupings(HtmlDocument doc)
     {
+        HtmlNodeCollection optionsGroups = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ag-row-group')]");
+        
         List<(DateTime, int)> results = new();
-        foreach (IElementHandle toCheck in optionsGroups)
+        if (optionsGroups == null)
+            return results;
+        
+        foreach (HtmlNode toCheck in optionsGroups)
         {
-            IElementHandle? expirationDateElement = await toCheck.QuerySelectorAsync("span.expiration-date");
+            HtmlNode expirationDateElement = toCheck.SelectSingleNode("//span[@class='expiration-date']");
             if (expirationDateElement == null)
                 continue;
 
-            string? contentText = await expirationDateElement.TextContentAsync();
+            string? contentText = expirationDateElement.InnerText;
             if (contentText == null)
                 continue;
             
@@ -126,8 +137,8 @@ public class OptionsScraperService
             if (expirationDate == null)
                 continue;
 
-            string? rowIndexText = await toCheck.GetAttributeAsync("row-index");
-            if (rowIndexText == null)
+            string rowIndexText = toCheck.GetAttributeValue("row-index", "-1");
+            if (rowIndexText == "-1")
                 continue;
             
             int? rowIndex = rowIndexText.parseIntNullable();
@@ -140,13 +151,13 @@ public class OptionsScraperService
         return results;
     }
 
-    private async Task<List<OptionData>> findOptionData(string symbol, DateTime expirationDate, IEnumerable<IElementHandle> rows, int headerRowIndex)
+    private List<OptionData> findOptionData(string symbol, DateTime expirationDate, HtmlNodeCollection rows, int headerRowIndex)
     {
         List<OptionData> results = new();
-        foreach (IElementHandle toCheck in rows)
+        foreach (HtmlNode toCheck in rows)
         {
-            string? rowIndexText = await toCheck.GetAttributeAsync("row-index");
-            if (rowIndexText == null)
+            string rowIndexText = toCheck.GetAttributeValue("row-index", "-1");
+            if (rowIndexText == "-1")
                 continue;
             
             int? rowIndex = rowIndexText.parseIntNullable();
@@ -162,15 +173,15 @@ public class OptionsScraperService
             row.symbol = symbol;
             row.expirationDate = expirationDate;
 
-            IElementHandle? strikeElement = await toCheck.QuerySelectorAsync("""[col-id="strike"]""");
+            HtmlNode strikeElement = toCheck.SelectSingleNode("./div[@col-id='strike']");
             if (strikeElement == null)
                 continue;
-            row.strikePrice = await toDecimal(strikeElement);
+            row.strikePrice = toDecimal(strikeElement);
 
-            if (!await populateCallOptionData(row, toCheck))
+            if (!populateCallOptionData(row, toCheck))
                 continue;
 
-            if (!await populatePutOptionData(row, toCheck))
+            if (!populatePutOptionData(row, toCheck))
                 continue;
 
             results.Add(row);
@@ -178,71 +189,71 @@ public class OptionsScraperService
         return results;
     }
     
-    private async Task<bool> populateCallOptionData(OptionData row, IElementHandle toCheck)
+    private bool populateCallOptionData(OptionData row, HtmlNode toCheck)
     {
-        IElementHandle? callLastElement = await toCheck.QuerySelectorAsync("""[col-id="callLast"]""");
+        HtmlNode callLastElement = toCheck.SelectSingleNode("./div[@col-id='callLast']");
         if (callLastElement == null)
             return false;
 
-        row.callLastPrice = await toDecimal(callLastElement);
+        row.callLastPrice = toDecimal(callLastElement);
             
-        IElementHandle? callAskElement = await toCheck.QuerySelectorAsync("""[col-id="callAsk"]""");
+        HtmlNode callAskElement = toCheck.SelectSingleNode("./div[@col-id='callAsk']");
         if (callAskElement != null)
-            row.callAskPrice = await toDecimal(callAskElement, "Buy at ");
+            row.callAskPrice = toDecimal(callAskElement, "Buy at ");
             
-        IElementHandle? callBidElement = await toCheck.QuerySelectorAsync("""[col-id="callBid"]""");
+        HtmlNode callBidElement = toCheck.SelectSingleNode("./div[@col-id='callBid']");
         if (callBidElement != null)
-            row.callBidPrice = await toDecimal(callBidElement, "Sell at ");
+            row.callBidPrice = toDecimal(callBidElement, "Sell at ");
         
-        IElementHandle? callOpenInterestElement = await toCheck.QuerySelectorAsync("""[col-id="callOpenInterest"]""");
+        HtmlNode callOpenInterestElement = toCheck.SelectSingleNode("./div[@col-id='callOpenInterest']");
         if (callOpenInterestElement != null)
-            row.callOpenInterest = await toDecimal(callOpenInterestElement);
+            row.callOpenInterest = toDecimal(callOpenInterestElement);
 
-        IElementHandle? callImpliedVolatilityElement = await toCheck.QuerySelectorAsync("""[col-id="callImpliedVolatility"]""");
+        HtmlNode callImpliedVolatilityElement = toCheck.SelectSingleNode("./div[@col-id='callImpliedVolatility']");
         if (callImpliedVolatilityElement != null)
-            row.callImpliedVolatility = await toDecimalPercentage(callImpliedVolatilityElement);
+            row.callImpliedVolatility = toDecimalPercentage(callImpliedVolatilityElement);
 
-        IElementHandle? callDeltaElement = await toCheck.QuerySelectorAsync("""[col-id="callDelta"]""");
+        HtmlNode callDeltaElement = toCheck.SelectSingleNode("./div[@col-id='callDelta']");
         if (callDeltaElement != null)
-            row.callDelta = await toDecimal(callDeltaElement);
+            row.callDelta = toDecimal(callDeltaElement);
         
         return true;
     }
     
-    private async Task<bool> populatePutOptionData(OptionData row, IElementHandle toCheck)
+    private bool populatePutOptionData(OptionData row, HtmlNode toCheck)
     {
-        IElementHandle? putLastElement = await toCheck.QuerySelectorAsync("""[col-id="putLast"]""");
+        HtmlNode putLastElement = toCheck.SelectSingleNode("./div[@col-id='putLast']");
         if (putLastElement == null)
             return false;
 
-        row.putLastPrice = await toDecimal(putLastElement);
+        row.putLastPrice = toDecimal(putLastElement);
             
-        IElementHandle? putAskElement = await toCheck.QuerySelectorAsync("""[col-id="putAsk"]""");
+        HtmlNode putAskElement = toCheck.SelectSingleNode("./div[@col-id='putAsk']");
         if (putAskElement != null)
-            row.putAskPrice = await toDecimal(putAskElement, "Buy at ");
+            row.putAskPrice = toDecimal(putAskElement, "Buy at ");
             
-        IElementHandle? putBidElement = await toCheck.QuerySelectorAsync("""[col-id="putBid"]""");
+        HtmlNode putBidElement = toCheck.SelectSingleNode("./div[@col-id='putBid']");
         if (putBidElement != null)
-            row.putBidPrice = await toDecimal(putBidElement, "Sell at ");
+            row.putBidPrice = toDecimal(putBidElement, "Sell at ");
 
-        IElementHandle? putOpenInterestElement = await toCheck.QuerySelectorAsync("""[col-id="putOpenInterest"]""");
+        HtmlNode putOpenInterestElement = toCheck.SelectSingleNode("./div[@col-id='putOpenInterest']");
         if (putOpenInterestElement != null)
-            row.putOpenInterest = await toDecimal(putOpenInterestElement);
+            row.putOpenInterest = toDecimal(putOpenInterestElement);
 
-        IElementHandle? putImpliedVolatilityElement = await toCheck.QuerySelectorAsync("""[col-id="putImpliedVolatility"]""");
+        HtmlNode putImpliedVolatilityElement = toCheck.SelectSingleNode("./div[@col-id='putImpliedVolatility']");
         if (putImpliedVolatilityElement != null)
-            row.putImpliedVolatility = await toDecimalPercentage(putImpliedVolatilityElement);
+            row.putImpliedVolatility = toDecimalPercentage(putImpliedVolatilityElement);
 
-        IElementHandle? putDeltaElement = await toCheck.QuerySelectorAsync("""[col-id="putDelta"]""");
+        HtmlNode putDeltaElement = toCheck.SelectSingleNode("./div[@col-id='putDelta']");
         if (putDeltaElement != null)
-            row.putDelta = await toDecimal(putDeltaElement);
+            row.putDelta = toDecimal(putDeltaElement);
         
         return true;
     }
     
-    private async Task<decimal> toDecimal(IElementHandle element, string? splitAt = null)
+    private decimal toDecimal(HtmlNode element, string? splitAt = null)
     {
-        string? contentText = await element.TextContentAsync();
+        string? contentText = element.InnerText;
         if (contentText == null)
             throw new InvalidOperationException("Cannot extract text from element: " + element);
 
@@ -258,14 +269,14 @@ public class OptionsScraperService
         return decimal.Parse(contentText);
     }
 
-    private Task<decimal?> toDecimalPercentage(IElementHandle element)
+    private decimal? toDecimalPercentage(HtmlNode element)
     {
         return toDecimalNullable(element, s => TextUtil.removeEnding(s, "%"));
     }
     
-    private async Task<decimal?> toDecimalNullable(IElementHandle element, Func<string,string?> cleanup)
+    private decimal? toDecimalNullable(HtmlNode element, Func<string,string?> cleanup)
     {
-        string? contentText = await element.TextContentAsync();
+        string? contentText = element.InnerText;
         if (contentText == null)
             throw new InvalidOperationException("Cannot extract text from element: " + element);
 
