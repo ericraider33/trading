@@ -145,7 +145,7 @@ public class OptionsScraperService
         
         foreach (HtmlNode toCheck in optionsGroups)
         {
-            HtmlNode expirationDateElement = toCheck.SelectSingleNode("//span[@class='expiration-date']");
+            HtmlNode expirationDateElement = toCheck.SelectSingleNode(".//span[@class='expiration-date']");
             if (expirationDateElement == null)
                 continue;
 
