@@ -373,4 +373,89 @@ public class OptionsCalculator
         
         return spreadValue;
     }
+    
+    /// <summary>
+    /// Returns the next 5 weekly expiration dates starting from the given expiration date.
+    /// </summary>
+    private List<DateTime> getExpirationDates(DateTime expirationDate)
+    {
+        List<DateTime> dates = new();
+        for (int i = 0; i < 5; i++)
+        {
+            dates.Add(expirationDate.AddDays(i * 7));
+        }
+        return dates;
+    }
+    
+    private OptionDateGain buildDateGain(OptionData option, List<DateTime> dates)
+    {
+        OptionDateGain result = new();
+        result.symbol = option.symbol;
+        result.sharePrice = option.sharePrice;
+        result.putCallRatio = option.putCallRatio;
+        result.beta = option.beta;
+
+        foreach (DateTime date in dates)
+        {
+            result.Values.Add(new OptionDateGain.InfoForDate
+            {
+                expirationDate = date
+            });
+        }
+
+        return result;
+    }
+    
+    public OptionDateGain? calculateCallDateGain(string symbol, DateTime expirationDate, List<OptionData> options)
+    {
+        List<DateTime> dates = getExpirationDates(expirationDate);
+        List<OptionData> toReview = options
+            .Where(x => x.symbol == symbol && dates.Contains(x.expirationDate))
+            .OrderBy(x => x.expirationDate)
+            .ThenBy(x => x.strikePrice)
+            .ToList();
+
+        int matchingDates = toReview.Select(x => x.expirationDate).Distinct().Count();
+        if (toReview.Count == 0 || matchingDates != dates.Count)
+            return null;
+
+        OptionDateGain gain = buildDateGain(options[0], dates);
+        if (gain.sharePrice == 0)
+            return null;
+
+        DateTime lastDate = dates.Last();
+        List<OptionData> toCheck = toReview.Where(x => x.expirationDate == lastDate).ToList();
+        
+        decimal precent3 = roundPrice(1.03m * gain.sharePrice, false);
+        int? index3 = findLesserThanOrEqualIndex(toCheck, precent3);
+        if (index3 == null)
+            return null;
+
+        // Use the strike price from the last date to find matching strike prices across all dates
+        gain.strikePrice = toCheck[index3.Value].strikePrice;
+
+        // Verifies that all dates have the same strike price
+        List<OptionData> strikeOptions = toReview.Where(x => x.strikePrice == gain.strikePrice).ToList();
+        if (strikeOptions.Count != dates.Count)
+            return null;
+        
+        for (int i = 0; i < dates.Count; i++)
+        {
+            DateTime date = dates[i];
+            OptionData option = strikeOptions.First(x => x.expirationDate == date);
+            decimal? optionPrice = option.getCallPriceBestGuess();
+            if (optionPrice == null)
+                return null;
+            
+            decimal? incomePercent = percentIncome(optionPrice, gain.sharePrice);
+            if (incomePercent == null)
+                return null;
+
+            gain.Values[i].optionPrice = optionPrice;
+            gain.Values[i].incomePercent = incomePercent;
+        }
+        
+        return gain;
+    }
+    
 }

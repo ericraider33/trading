@@ -61,6 +61,7 @@ class Program
             List<OptionSpread> callSpreadList = new List<OptionSpread>();
             List<OptionValues> putValuesList = new List<OptionValues>();
             List<OptionSpread> putSpreadList = new List<OptionSpread>();
+            List<OptionDateGain> callDateGainList = new List<OptionDateGain>();
             foreach (string symbol in symbols)
             {
                 OptionValues? callValues = calculator.calculateCallOptions(symbol, friday.local, options);
@@ -78,6 +79,10 @@ class Program
                 List<OptionSpread>? putSpreads = calculator.calculatePutSpread(symbol, friday.local, options, limit: 10);
                 if (putSpreads != null)
                     putSpreadList.AddRange(putSpreads);
+
+                OptionDateGain? callDateGain = calculator.calculateCallDateGain(symbol, friday.local, options);
+                if (callDateGain != null)
+                    callDateGainList.Add(callDateGain);
             }
             
             callValuesList = callValuesList.OrderByDescending(o => o.incomePercent1 ?? 0m).ToList();
@@ -96,6 +101,9 @@ class Program
 
             putSpreadList = putSpreadList.OrderByDescending(o => o.spreadValue).ToList();
             osGenerator.writeCsv(putSpreadList, $"put_spreads_{today.ToString()}.csv");
+            
+            OptionDateGainCsv odgGenerator = new OptionDateGainCsv();
+            odgGenerator.writeCsv(callDateGainList, $"call_date_gain_{today.ToString()}.csv");
             
             Console.WriteLine("DONE");
         }
